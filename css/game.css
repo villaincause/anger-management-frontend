@@ -1,0 +1,257 @@
+/* --- 1. Top Header & User Stats --- */
+.home-header {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+}
+
+.user-stats {
+    position: absolute;
+    top: 10px; /* Moved upward from 20px */
+    right: 20px;
+    z-index: 100;
+    text-align: center; /* Centered text for a cleaner look */
+    background: #fdf5e6; /* Solid cream background to match theme */
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 3px solid #4A2C2A; /* Thick border matching game buttons */
+    box-shadow: 0 4px 0 #4A2C2A; /* Added depth shadow */
+}
+
+#logged-in-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Changed to center for better balance */
+    gap: 2px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #4A2C2A;
+    font-weight: bold;
+}
+
+#display-username {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #ffdddd;
+    margin-bottom: 2px;
+}
+
+#display-record {
+    font-size: 0.8rem;
+    color: #ff9a9a; /* Slightly lighter brown for the record */
+    margin-bottom: 8px;
+}
+
+.logout-link {
+    background: #8b0000; /* Dark red to signal "Exit" */
+    color: white;
+    border: none;
+    padding: 5px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 0 #5a0000;
+}
+
+.logout-link:hover {
+    background: #a52a2a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 #5a0000;
+}
+
+.logout-link:active {
+    transform: translateY(0);
+    box-shadow: 0 0 0 #5a0000;
+}
+
+.auth-btn {
+    padding: 10px 20px;
+    background: #4A2C2A;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.auth-btn:hover {
+    background: #633b38;
+}
+
+/* --- 2. Scoreboard (Top Center) --- */
+.scoreboard {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 20px;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #4A2C2A;
+    z-index: 10;
+}
+
+.score-box {
+    background: #FFF;
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+}
+
+/* --- 3. Battle Arena --- */
+.arena-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5%;
+    height: 60vh;
+    margin-top: 20px;
+}
+
+.fighter-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 40%;
+    transition: all 0.3s ease;
+}
+
+/* MIRROR PLAYER 2 */
+.fighter-side.right {
+    transform: scaleX(-1);
+}
+
+/* UN-MIRROR P2 CONTENT */
+.fighter-side.right .stats-container,
+.fighter-side.right .state-label {
+    transform: scaleX(-1);
+}
+
+.hand-wrapper {
+    perspective: 1000px;
+    overflow: visible !important; 
+}
+
+.hand-wrapper img {
+    width: 320px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+}
+
+/* --- 4. State Labels & Stats --- */
+.state-label {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #4A2C2A;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    text-shadow: 1px 1px 0px white;
+}
+
+.stats-container {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 20px;
+    border-radius: 20px;
+    width: 280px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+}
+
+.progress-bar.anger { background-color: #ff4d4d; }
+.progress-bar.satisfaction { background-color: #4dff88; }
+.progress-bar.confidence { background-color: #4db8ff; }
+
+/* --- 5. Control Center (Bottom) --- */
+.controls-center {
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.control-group {
+    display: flex;
+    gap: 25px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    backdrop-filter: blur(5px);
+}
+
+.move-btn, .action-btn {
+    width: 110px;
+    height: 110px;
+    background: white;
+    border: 5px solid #4A2C2A;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 6px 0 #4A2C2A;
+}
+
+.move-btn img, .action-btn img {
+    width: 65%;
+    height: 65%;
+    object-fit: contain;
+}
+
+.move-btn:hover, .action-btn:hover {
+    transform: translateY(-12px);
+    box-shadow: 0 18px 0 #4A2C2A;
+}
+
+#btn-give-up {
+    margin-top: 15px;
+    padding: 10px 25px;
+    background: #4A2C2A;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+/* --- 6. Clash & Hit Animations --- */
+
+.clash-p1 { animation: punchP1 0.4s ease-out; }
+.clash-p2 { animation: punchP2 0.4s ease-out; }
+
+.action-hit {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    filter: sepia(1) saturate(5) hue-rotate(-50deg); 
+}
+
+@keyframes punchP1 {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(150px) rotate(15deg); } 
+    100% { transform: translateX(0); }
+}
+
+@keyframes punchP2 {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(150px) rotate(15deg); } 
+    100% { transform: translateX(0); }
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+    40%, 60% { transform: translate3d(6px, 0, 0); }
+}

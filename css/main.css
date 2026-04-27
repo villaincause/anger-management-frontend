@@ -1,0 +1,85 @@
+/* 1. Global Reset & Theme */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #FFF1D3; /* Your specified theme color */
+    color: #333;
+    height: 100vh;
+    overflow: hidden; /* Prevents scrolling during battle animations */
+}
+
+/* 2. SPA View Management */
+.view {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    transition: opacity 0.5s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 3. Typography & Branding */
+.game-logo, .brand-title {
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-align: center;
+    color: #4A2C2A; /* A deep brown/maroon that looks great with cream/yellow */
+}
+
+/* 4. Common UI Elements */
+.menu-btn, .move-btn, .action-btn {
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s, filter 0.2s;
+    background: none;
+}
+
+.menu-btn:hover, .move-btn:hover {
+    transform: scale(1.1);
+}
+
+.secondary-btn {
+    background-color: #4A2C2A;
+    color: #FFF1D3;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* 5. Progress Bar Globals (The Psychorithm Bars) */
+.progress-container {
+    width: 150px;
+    height: 12px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 5px;
+    border: 1px solid rgba(74, 44, 42, 0.2);
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%; /* Controlled by ui.js */
+    transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Psychorithm Color Coding */
+.anger { background-color: #FF4D4D; }
+.satisfaction { background-color: #4DFF88; }
+.confidence { background-color: #4D88FF; }
+
+/* 6. Utility Classes */
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

@@ -1,0 +1,91 @@
+/* 1. Layout for the Home View */
+#home-screen {
+    justify-content: space-between;
+    align-items: center;
+    padding: 60px 20px;
+    background-color: #FFF1D3;
+}
+
+/* 2. Header (Top Right Stats) */
+.home-header {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 40px;
+}
+
+.user-stats {
+    background: #4A2C2A;
+    color: #FFF1D3;
+    padding: 15px 25px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 15px rgba(74, 44, 42, 0.2);
+}
+
+#display-username {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+#display-record {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* 3. Central Content & Logo */
+.home-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 50px;
+}
+
+.game-logo {
+    font-size: 80px;
+    text-shadow: 4px 4px 0px rgba(74, 44, 42, 0.1);
+    transform: rotate(-2deg); /* Adding a bit of personality */
+}
+
+/* 4. Menu Buttons */
+.menu-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.menu-btn {
+    width: 280px;
+    padding: 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #4A2C2A;
+    background: white;
+    border: 3px solid #4A2C2A;
+    border-radius: 50px;
+    box-shadow: 0 6px 0px #4A2C2A;
+    transition: all 0.1s ease;
+}
+
+.menu-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0px #4A2C2A;
+}
+
+.menu-btn:hover {
+    background-color: #4A2C2A;
+    color: #FFF1D3;
+}
+
+/* 5. Online/Multiplayer Highlight */
+#btn-online {
+    background-color: #f1c40f; /* A gold/yellow to make Multiplayer stand out */
+}
+
+#btn-online:hover {
+    background-color: #4A2C2A;
+}
