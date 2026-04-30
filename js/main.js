@@ -20,6 +20,14 @@ const btnShowAuth = document.getElementById('btn-show-login');
 const btnLogout = document.getElementById('btn-logout');
 const closeModal = document.querySelector('.close-modal');
 
+const btnFriendMenu = document.getElementById('btn-friend-menu');
+const friendOptions = document.getElementById('friend-room-options');
+const btnCreateRoom = document.getElementById('btn-create-room');
+const btnJoinRoom = document.getElementById('btn-join-room');
+const btnBackMenu = document.getElementById('btn-back-menu');
+const inputRoomCode = document.getElementById('input-room-code');
+const roomCodeDisplay = document.getElementById('room-code-display');
+
 const loginForm = document.getElementById('form-login');
 const registerForm = document.getElementById('form-register');
 const linkToReg = document.getElementById('link-to-register');
@@ -35,6 +43,17 @@ function showView(viewName) {
 
     if (viewName === 'home') {
         homeScreen.classList.remove('hidden');
+        
+        // Reset Friend Menu state
+        if (friendOptions) friendOptions.classList.add('hidden');
+        if (roomCodeDisplay) roomCodeDisplay.classList.add('hidden');
+        
+        // Show main buttons
+        if (btnLocal) btnLocal.classList.remove('hidden');
+        if (btnOnline) btnOnline.classList.remove('hidden');
+        if (btnFriendMenu) btnFriendMenu.classList.remove('hidden');
+        
+        document.querySelector('.game-logo').innerText = "ANGER MANAGEMENT";
     } else if (viewName === 'game') {
         gameScreen.classList.remove('hidden');
     }
@@ -60,7 +79,76 @@ function updateAuthUI(user) {
     }
 }
 
-// 4. Event Listeners
+// 4. Event Listeners (THE ONLY SOURCE OF TRUTH)
+
+// FRIEND ROOM NAVIGATION
+if (btnFriendMenu) {
+    btnFriendMenu.addEventListener('click', () => {
+        if (!currentUser) {
+            showNotification("Please Login to play with friends");
+            return;
+        }
+        btnLocal.classList.add('hidden');
+        btnOnline.classList.add('hidden');
+        btnFriendMenu.classList.add('hidden');
+        
+        friendOptions.classList.remove('hidden');
+        if (btnCreateRoom) btnCreateRoom.classList.remove('hidden');
+    });
+}
+
+if (btnBackMenu) {
+    btnBackMenu.addEventListener('click', () => {
+        friendOptions.classList.add('hidden');
+        if (roomCodeDisplay) roomCodeDisplay.classList.add('hidden');
+        
+        btnLocal.classList.remove('hidden');
+        btnOnline.classList.remove('hidden');
+        btnFriendMenu.classList.remove('hidden');
+    });
+}
+
+// GAME INITIATION
+if (btnLocal) {
+    btnLocal.addEventListener('click', () => {
+        const name = currentUser ? currentUser.username : "Guest";
+        initGame('local', name);
+    });
+}
+
+if (btnOnline) {
+    btnOnline.addEventListener('click', () => {
+        if (!currentUser) {
+            showNotification("Please Login to play Online");
+        } else {
+            initGame('online', currentUser.username);
+        }
+    });
+}
+
+if (btnCreateRoom) {
+    btnCreateRoom.addEventListener('click', () => {
+        if (typeof requestStartGame === "function") {
+            btnCreateRoom.classList.add('hidden');
+            requestStartGame('friend', currentUser.username, currentUser.id, null, 'create');
+        }
+    });
+}
+
+if (btnJoinRoom) {
+    btnJoinRoom.addEventListener('click', () => {
+        const code = inputRoomCode.value.trim();
+        if (code.length === 4) {
+            if (typeof requestStartGame === "function") {
+                requestStartGame('friend', currentUser.username, currentUser.id, code, 'join');
+            }
+        } else {
+            showNotification("Enter a valid 4-digit code");
+        }
+    });
+}
+
+// AUTH HANDLERS
 if (btnShowAuth) btnShowAuth.addEventListener('click', () => authModal.classList.remove('hidden'));
 if (closeModal) closeModal.addEventListener('click', () => authModal.classList.add('hidden'));
 
@@ -104,24 +192,6 @@ if (registerForm) {
 
 if (btnLogout) btnLogout.addEventListener('click', () => updateAuthUI(null));
 
-if (btnLocal) {
-    btnLocal.addEventListener('click', () => {
-        const name = currentUser ? currentUser.username : "Guest";
-        initGame('local', name);
-    });
-}
-
-if (btnOnline) {
-    btnOnline.addEventListener('click', () => {
-        if (!currentUser) {
-            homeNotif?.classList.remove('hidden');
-            setTimeout(() => homeNotif?.classList.add('hidden'), 3000);
-        } else {
-            initGame('online', currentUser.username);
-        }
-    });
-}
-
 if (btnGiveUp) {
     btnGiveUp.addEventListener('click', () => {
         if (confirm("Are you sure you want to give up?")) {
@@ -131,10 +201,21 @@ if (btnGiveUp) {
     });
 }
 
+// HELPERS
+function showNotification(text) {
+    if (!homeNotif) return;
+    homeNotif.innerText = text;
+    homeNotif.classList.remove('hidden');
+    setTimeout(() => homeNotif.classList.add('hidden'), 3000);
+}
+
 function initGame(mode, username) {
     if (typeof resetUI === "function") resetUI();
-    if (typeof requestStartGame === "function") requestStartGame(mode, username);
-    showView('game');
+    const userId = currentUser ? currentUser.id : null;
+    if (typeof requestStartGame === "function") {
+        requestStartGame(mode, username, userId);
+    }
+    if(mode === 'local') showView('game');
 }
 
 function initControls() {
@@ -161,39 +242,21 @@ function initControls() {
     });
 }
 
-// 5. Global App Start
 document.addEventListener('DOMContentLoaded', () => {
-    // A. Map HTML elements to code first
     if (typeof initSelectors === "function") initSelectors();
-
-    // B. Initialize system level components
     if (typeof initSocket === "function") initSocket();
     initControls();
 
-    // C. Handle User Session
     const savedUser = localStorage.getItem('rps_user_session');
-    if (savedUser) {
-        updateAuthUI(JSON.parse(savedUser));
-    }
+    if (savedUser) updateAuthUI(JSON.parse(savedUser));
 
-    // D. Attempt to Restore Game State
     let gameRestored = false;
-    if (typeof loadGameState === "function") {
-        gameRestored = loadGameState();
-    }
+    if (typeof loadGameState === "function") gameRestored = loadGameState();
 
-    // E. Set the images
     if (typeof initUIAssets === "function") initUIAssets();
 
-    // F. Navigate to correct view
     if (gameRestored) {
         showView('game');
-        // Ensure phase is restored
-        const saved = localStorage.getItem('fightingGameState');
-        if (saved) {
-            const state = JSON.parse(saved);
-            toggleActionPhase(state.phase === 'action');
-        }
     } else {
         showView('home');
     }

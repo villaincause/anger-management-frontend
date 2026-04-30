@@ -1,9 +1,13 @@
 /* 1. Layout for the Home View */
 #home-screen {
+    display: flex; /* CRITICAL: This was missing */
+    flex-direction: column;
+    height: 100vh;
     justify-content: space-between;
     align-items: center;
-    padding: 60px 20px;
+    padding: 40px 20px;
     background-color: #FFF1D3;
+    overflow: hidden;
 }
 
 /* 2. Header (Top Right Stats) */
@@ -47,7 +51,7 @@
 .game-logo {
     font-size: 80px;
     text-shadow: 4px 4px 0px rgba(74, 44, 42, 0.1);
-    transform: rotate(-2deg); /* Adding a bit of personality */
+    transform: rotate(-2deg);
 }
 
 /* 4. Menu Buttons */
@@ -55,6 +59,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    align-items: center;
 }
 
 .menu-btn {
@@ -69,6 +74,7 @@
     border-radius: 50px;
     box-shadow: 0 6px 0px #4A2C2A;
     transition: all 0.1s ease;
+    cursor: pointer;
 }
 
 .menu-btn:active {
@@ -83,9 +89,102 @@
 
 /* 5. Online/Multiplayer Highlight */
 #btn-online {
-    background-color: #f1c40f; /* A gold/yellow to make Multiplayer stand out */
+    background-color: #f1c40f; 
 }
 
 #btn-online:hover {
     background-color: #4A2C2A;
+}
+
+.friend-btn {
+    background-color: #e67e22; 
+    color: white;
+}
+
+/* 6. Friend Room UI Elements */
+.flex-column { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+}
+
+.gap-15 { 
+    gap: 15px; 
+}
+
+/* Dedicated box for displaying the generated Room Code */
+.room-card {
+    background: white;
+    border: 3px dashed #4A2C2A;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    width: 280px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 0px rgba(74, 44, 42, 0.1);
+}
+
+.room-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #4A2C2A;
+    text-transform: uppercase;
+}
+
+.room-card h2 {
+    font-size: 3rem;
+    color: #e67e22;
+    margin: 10px 0;
+    letter-spacing: 8px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.room-card small {
+    display: block;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.join-group {
+    display: flex;
+    gap: 10px;
+    width: 280px;
+}
+
+#input-room-code {
+    width: 60%;
+    padding: 10px;
+    border: 3px solid #4A2C2A;
+    border-radius: 12px;
+    font-family: inherit;
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.1rem;
+    outline: none;
+}
+
+.menu-btn.small {
+    width: 40%;
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 12px;
+}
+
+.menu-btn.secondary {
+    background-color: #ecf0f1;
+}
+
+.text-link {
+    background: none;
+    border: none;
+    color: #4A2C2A;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 10px;
+}
+
+.hidden {
+    display: none !important;
 }

@@ -1,28 +1,25 @@
 /**
- * ui.js - The Visual Engine with Persistence
+ * ui.js - The Visual Engine (Strictly for Rendering & State)
  */
 
 let p1Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
 let p2Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
 
-// Initialize selectors as null and fill them when needed
 let bars = null;
 let hands = null;
 let scores = null;
 
 /**
- * SAVING STATE: Updated to preserve gameId from socket.js
+ * SAVING STATE
  */
 function saveGameState() {
-    // 1. Grab existing data to preserve the gameId
     const existing = localStorage.getItem('fightingGameState');
     const oldState = existing ? JSON.parse(existing) : {};
 
     const gameState = {
-        ...oldState, // This preserves the gameId saved by socket.js
+        ...oldState, 
         p1Stats,
         p2Stats,
-        // Check which control set is currently visible to remember the phase
         phase: document.getElementById('rps-controls')?.classList.contains('hidden') ? 'action' : 'rps',
         timestamp: new Date().getTime()
     };
@@ -30,7 +27,7 @@ function saveGameState() {
 }
 
 /**
- * LOADING STATE: Call this in your main init/window.onload
+ * LOADING STATE
  */
 function loadGameState() {
     const saved = localStorage.getItem('fightingGameState');
@@ -38,11 +35,9 @@ function loadGameState() {
 
     const state = JSON.parse(saved);
     
-    // Restore variables
     if (state.p1Stats) p1Stats = state.p1Stats;
     if (state.p2Stats) p2Stats = state.p2Stats;
 
-    // Sync UI
     initSelectors();
     ['p1', 'p2'].forEach(p => {
         const stats = p === 'p1' ? p1Stats : p2Stats;
@@ -52,7 +47,6 @@ function loadGameState() {
     });
     updateScores(p1Stats.score, p2Stats.score);
     
-    // Restore phase
     toggleActionPhase(state.phase === 'action');
     
     return true;
@@ -84,10 +78,7 @@ function initSelectors() {
 }
 
 function initUIAssets() {
-    if (typeof GAME_ASSETS === 'undefined') {
-        console.warn("GAME_ASSETS not found. Waiting for assets...");
-        return;
-    }
+    if (typeof GAME_ASSETS === 'undefined') return;
 
     const moveButtons = document.querySelectorAll('.move-btn img');
     if (moveButtons.length >= 3) {
@@ -177,11 +168,12 @@ function resetUI() {
     localStorage.removeItem('fightingGameState'); 
     initSelectors();
     
+    document.getElementById('room-code-display')?.classList.add('hidden');
+    
     p1Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
     p2Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
     
-    const players = ['p1', 'p2'];
-    players.forEach(p => {
+    ['p1', 'p2'].forEach(p => {
         updateBar(p, 'anger', 50);
         updateBar(p, 'satisfaction', 25);
         updateBar(p, 'confidence', 0);

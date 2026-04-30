@@ -34,11 +34,8 @@ function initSocket() {
 
     socket.onopen = () => {
         console.log('Connected to Anger Management Server');
-        
-        // Restore game ID immediately on connection
         getActiveGameId();
 
-        // Re-authenticate with server
         const savedUser = localStorage.getItem('rps_user_session');
         if (savedUser) {
             const user = JSON.parse(savedUser);
@@ -63,25 +60,65 @@ function handleServerMessage(data) {
             break;
 
         case 'AUTH_ERROR':
-            if (!payload.isReauth) alert(`Authentication Failed: ${payload.message}`);
+            if (!payload.isReauth) alert(`Error: ${payload.message}`);
+            break;
+
+        case 'ROOM_CREATED':
+            // Logic for the Host of a Friend Room
+            const display = document.getElementById('room-code-display');
+            const codeText = document.getElementById('display-generated-code');
+            const createBtn = document.getElementById('btn-create-room');
+            
+            if (display && codeText) {
+                display.classList.remove('hidden');
+                codeText.innerText = payload.roomCode;
+            }
+
+            // Hide the create button so they don't host multiple rooms
+            if (createBtn) createBtn.classList.add('hidden');
+
+            if (typeof showNotification === 'function') {
+                showNotification(`Room Created! Share code: ${payload.roomCode}`);
+            }
+            break;
+
+        case 'WAITING_FOR_OPPONENT':
+            if (typeof showNotification === 'function') {
+                showNotification("Waiting for an opponent to join...");
+            }
             break;
 
         case 'GAME_STARTED':
             currentGameId = payload.id;
             saveGameIdToStorage(payload.id);
-            if (typeof updateScores === 'function') updateScores(0, 0);
+            
+            // Clean up Home UI for Friend Rooms
+            const codeArea = document.getElementById('room-code-display');
+            const friendOptions = document.getElementById('friend-room-options');
+            
+            if (codeArea) codeArea.classList.add('hidden');
+            if (friendOptions) friendOptions.classList.add('hidden');
+
+            // UI Transition to Game
+            if (typeof showView === 'function') showView('game');
+            if (typeof updateScores === 'function') updateScores(payload.p1.score, payload.p2.score);
             if (typeof updateAllBars === 'function') updateAllBars(payload.p1.stats, payload.p2.stats);
+            if (typeof showNotification === 'function') showNotification("Match Started!");
             break;
 
         case 'ROUND_RESULT':
             if (typeof updateScores === 'function') updateScores(payload.p1Score || 0, payload.p2Score || 0);
             if (typeof animateClash === 'function') animateClash(payload.p1Move, payload.p2Move);
             
-            if (payload.result === 'p1') {
-                setTimeout(() => typeof toggleActionPhase === 'function' && toggleActionPhase(true), 1200);
-            } else if (payload.result === 'p2') {
-                if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
-            }
+            setTimeout(() => {
+                if (payload.result === 'p1') {
+                    if (typeof toggleActionPhase === 'function') toggleActionPhase(true);
+                } else if (payload.result === 'p2') {
+                    if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
+                } else {
+                    resetRPSUI();
+                }
+            }, 1200);
             break;
 
         case 'UPDATE_UI':
@@ -90,11 +127,14 @@ function handleServerMessage(data) {
             if (payload.p2Stats) updatePlayerBars('p2', payload.p2Stats);
             
             if (payload.cpuAction) {
+                if (typeof showActionEffect === 'function') showActionEffect('p2', payload.cpuAction);
+            } else if (payload.onlineAction) {
                 if (typeof showActionEffect === 'function') {
-                    showActionEffect('p2', payload.cpuAction); 
+                    showActionEffect(payload.actorRole, payload.onlineAction);
                 }
-                setTimeout(() => resetRPSUI(), 1500);
             }
+            
+            setTimeout(() => resetRPSUI(), 1500);
             break;
 
         case 'RESET_ROUND':
@@ -102,13 +142,23 @@ function handleServerMessage(data) {
             break;
 
         case 'GAME_OVER':
-            alert(`Game Over! Reason: ${payload.reason}`);
+            const winText = payload.reason === 'p1_win' ? "Player 1 Wins!" : "Player 2 Wins!";
+            alert(`Game Over! ${winText}`);
+            
             localStorage.removeItem('fightingGameState'); 
             if (payload.updatedUser && typeof updateAuthUI === 'function') updateAuthUI(payload.updatedUser);
-            showView('home');
+            if (typeof showView === 'function') showView('home');
+            break;
+            
+        case 'ERROR':
+            if (typeof showNotification === 'function') showNotification(payload.message);
             break;
     }
 }
+
+/**
+ * DATA SENDERS
+ */
 
 function saveGameIdToStorage(id) {
     const saved = localStorage.getItem('fightingGameState');
@@ -131,27 +181,37 @@ function sendAuthRequest(mode, data) {
     sendToServer(mode, data);
 }
 
-function requestStartGame(mode, username) {
-    sendToServer('START_GAME', { mode, username });
+function requestStartGame(mode, username, userId = null, roomCode = null, action = null) {
+    sendToServer('START_GAME', { mode, username, userId, roomCode, action });
 }
 
 function submitMove(move) {
     const id = getActiveGameId();
-    if (!id) {
-        console.error("No active Game ID found!");
-        return;
-    }
-    sendToServer('SUBMIT_MOVE', { gameId: id, move });
+    const user = JSON.parse(localStorage.getItem('rps_user_session'));
+    if (!id) return;
+    
+    sendToServer('SUBMIT_MOVE', { 
+        gameId: id, 
+        move, 
+        userId: user ? user.id : null 
+    });
 }
 
 function submitAction(action) {
     const id = getActiveGameId();
+    const user = JSON.parse(localStorage.getItem('rps_user_session'));
     if (!id) return;
 
     if (typeof showActionEffect === 'function') {
         showActionEffect('p1', action); 
     }
-    sendToServer('SUBMIT_ACTION', { gameId: id, action });
+
+    sendToServer('SUBMIT_ACTION', { 
+        gameId: id, 
+        action, 
+        userId: user ? user.id : null 
+    });
+
     if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
     setTimeout(() => resetRPSUI(), 1000);
 }
