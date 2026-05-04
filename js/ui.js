@@ -8,6 +8,7 @@ let p2Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
 let bars = null;
 let hands = null;
 let scores = null;
+let announcer = null; // Added announcer variable
 
 /**
  * SAVING STATE
@@ -75,6 +76,8 @@ function initSelectors() {
         p1: document.getElementById('p1-score'), 
         p2: document.getElementById('p2-score')
     };
+
+    announcer = document.getElementById('announcer-text'); // Selector for the new text element
 }
 
 function initUIAssets() {
@@ -97,6 +100,16 @@ function initUIAssets() {
     if (!hands) initSelectors();
     if (hands.p1) hands.p1.src = GAME_ASSETS.hands.rock;
     if (hands.p2) hands.p2.src = GAME_ASSETS.hands.rock;
+}
+
+/**
+ * Updates the text above the controls
+ */
+function updateAnnouncer(message) {
+    if (!announcer) initSelectors();
+    if (announcer) {
+        announcer.innerText = message;
+    }
 }
 
 function showActionEffect(victim, action) {
@@ -180,6 +193,7 @@ function resetUI() {
     });
     
     updateScores(0, 0);
+    updateAnnouncer("CHOOSE YOUR MOVE"); // Reset text on game reset
     initUIAssets();
 }
 
@@ -192,9 +206,11 @@ function toggleActionPhase(show) {
     if (show) {
         rpsControls.classList.add('hidden');
         actionControls.classList.remove('hidden');
+        updateAnnouncer("YOU WON! ATTACK!"); // UI feedback for win
     } else {
         rpsControls.classList.remove('hidden');
         actionControls.classList.add('hidden');
+        updateAnnouncer("CHOOSE YOUR MOVE"); // UI feedback for RPS
     }
     
     saveGameState(); 

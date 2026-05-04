@@ -64,7 +64,6 @@ function handleServerMessage(data) {
             break;
 
         case 'ROOM_CREATED':
-            // Logic for the Host of a Friend Room
             const display = document.getElementById('room-code-display');
             const codeText = document.getElementById('display-generated-code');
             const createBtn = document.getElementById('btn-create-room');
@@ -74,7 +73,6 @@ function handleServerMessage(data) {
                 codeText.innerText = payload.roomCode;
             }
 
-            // Hide the create button so they don't host multiple rooms
             if (createBtn) createBtn.classList.add('hidden');
 
             if (typeof showNotification === 'function') {
@@ -86,37 +84,54 @@ function handleServerMessage(data) {
             if (typeof showNotification === 'function') {
                 showNotification("Waiting for an opponent to join...");
             }
+            if (typeof updateAnnouncer === 'function') updateAnnouncer("WAITING FOR PLAYER...");
             break;
 
         case 'GAME_STARTED':
             currentGameId = payload.id;
             saveGameIdToStorage(payload.id);
             
-            // Clean up Home UI for Friend Rooms
             const codeArea = document.getElementById('room-code-display');
             const friendOptions = document.getElementById('friend-room-options');
             
             if (codeArea) codeArea.classList.add('hidden');
             if (friendOptions) friendOptions.classList.add('hidden');
 
-            // UI Transition to Game
             if (typeof showView === 'function') showView('game');
             if (typeof updateScores === 'function') updateScores(payload.p1.score, payload.p2.score);
             if (typeof updateAllBars === 'function') updateAllBars(payload.p1.stats, payload.p2.stats);
-            if (typeof showNotification === 'function') showNotification("Match Started!");
+            if (typeof updateAnnouncer === 'function') updateAnnouncer("MATCH STARTED!");
             break;
 
         case 'ROUND_RESULT':
             if (typeof updateScores === 'function') updateScores(payload.p1Score || 0, payload.p2Score || 0);
             if (typeof animateClash === 'function') animateClash(payload.p1Move, payload.p2Move);
             
+            // Logic Fix: Use 'yourRole' to determine perspective
+            const isDraw = payload.result === 'draw';
+            const amIWinner = payload.result === payload.yourRole;
+
+            let resultMsg = "DRAW!";
+            if (!isDraw) {
+                resultMsg = amIWinner ? "YOU WON THE CLASH!" : "OPPONENT WON THE CLASH!";
+            }
+            
+            if (typeof updateAnnouncer === 'function') updateAnnouncer(resultMsg);
+
             setTimeout(() => {
-                if (payload.result === 'p1') {
-                    if (typeof toggleActionPhase === 'function') toggleActionPhase(true);
-                } else if (payload.result === 'p2') {
-                    if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
-                } else {
+                if (isDraw) {
                     resetRPSUI();
+                } else {
+                    if (amIWinner) {
+                        // Winner gets the action buttons
+                        if (typeof toggleActionPhase === 'function') toggleActionPhase(true);
+                    } else {
+                        // Loser sees the waiting message
+                        if (typeof toggleActionPhase === 'function') {
+                            toggleActionPhase(false); 
+                            updateAnnouncer("OPPONENT IS ATTACKING...");
+                        }
+                    }
                 }
             }, 1200);
             break;
@@ -126,6 +141,7 @@ function handleServerMessage(data) {
             if (payload.p1Stats) updatePlayerBars('p1', payload.p1Stats);
             if (payload.p2Stats) updatePlayerBars('p2', payload.p2Stats);
             
+            // Handle visual effects for local CPU or Online opponent actions
             if (payload.cpuAction) {
                 if (typeof showActionEffect === 'function') showActionEffect('p2', payload.cpuAction);
             } else if (payload.onlineAction) {
@@ -134,6 +150,7 @@ function handleServerMessage(data) {
                 }
             }
             
+            // Clear UI after the hit animation finishes
             setTimeout(() => resetRPSUI(), 1500);
             break;
 
@@ -143,11 +160,14 @@ function handleServerMessage(data) {
 
         case 'GAME_OVER':
             const winText = payload.reason === 'p1_win' ? "Player 1 Wins!" : "Player 2 Wins!";
-            alert(`Game Over! ${winText}`);
+            if (typeof updateAnnouncer === 'function') updateAnnouncer("GAME OVER!");
             
-            localStorage.removeItem('fightingGameState'); 
-            if (payload.updatedUser && typeof updateAuthUI === 'function') updateAuthUI(payload.updatedUser);
-            if (typeof showView === 'function') showView('home');
+            setTimeout(() => {
+                alert(`Game Over! ${winText}`);
+                localStorage.removeItem('fightingGameState'); 
+                if (payload.updatedUser && typeof updateAuthUI === 'function') updateAuthUI(payload.updatedUser);
+                if (typeof showView === 'function') showView('home');
+            }, 500);
             break;
             
         case 'ERROR':
@@ -190,6 +210,9 @@ function submitMove(move) {
     const user = JSON.parse(localStorage.getItem('rps_user_session'));
     if (!id) return;
     
+    // UI Feedback immediately upon selection
+    if (typeof updateAnnouncer === 'function') updateAnnouncer("WAITING FOR OPPONENT...");
+
     sendToServer('SUBMIT_MOVE', { 
         gameId: id, 
         move, 
@@ -202,7 +225,10 @@ function submitAction(action) {
     const user = JSON.parse(localStorage.getItem('rps_user_session'));
     if (!id) return;
 
+    // Trigger local animation immediately for the actor
     if (typeof showActionEffect === 'function') {
+        // Determine prefix based on if user is p1 or p2 in storage if possible, 
+        // but local state usually defaults to 'p1' for the current user's screen.
         showActionEffect('p1', action); 
     }
 
@@ -213,11 +239,11 @@ function submitAction(action) {
     });
 
     if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
-    setTimeout(() => resetRPSUI(), 1000);
 }
 
 function resetRPSUI() {
     if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
+    // Add logic here to reset move button highlights or RPS icons if needed
 }
 
 function updatePlayerBars(playerPrefix, stats) {
