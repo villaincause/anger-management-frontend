@@ -4,6 +4,7 @@
 
 let socket;
 let currentGameId = null;
+let myRole = 'p1'; // Default to p1 for Local play
 
 /**
  * FAILSAFE: Retrieves the Game ID from memory or storage
@@ -89,6 +90,7 @@ function handleServerMessage(data) {
 
         case 'GAME_STARTED':
             currentGameId = payload.id;
+            myRole = payload.yourRole || 'p1'; // Store perspective role
             saveGameIdToStorage(payload.id);
             
             const codeArea = document.getElementById('room-code-display');
@@ -98,24 +100,27 @@ function handleServerMessage(data) {
             if (friendOptions) friendOptions.classList.add('hidden');
 
             if (typeof showView === 'function') showView('game');
-            if (typeof updateScores === 'function') updateScores(payload.p1.score, payload.p2.score);
-            if (typeof updateAllBars === 'function') updateAllBars(payload.p1.stats, payload.p2.stats);
+
+            // PERSPECTIVE FIX: Map Server Data to UI Sides
+            const pSelf = myRole === 'p1' ? payload.p1 : payload.p2;
+            const pOpp = myRole === 'p1' ? payload.p2 : payload.p1;
+
+            if (typeof updateScores === 'function') updateScores(pSelf.score, pOpp.score);
+            if (typeof updateAllBars === 'function') updateAllBars(pSelf.stats, pOpp.stats);
             if (typeof updateAnnouncer === 'function') updateAnnouncer("MATCH STARTED!");
             break;
 
         case 'ROUND_RESULT':
-            if (typeof updateScores === 'function') updateScores(payload.p1Score || 0, payload.p2Score || 0);
-            if (typeof animateClash === 'function') animateClash(payload.p1Move, payload.p2Move);
-            
-            // Logic Fix: Use 'yourRole' to determine perspective
-            const isDraw = payload.result === 'draw';
-            const amIWinner = payload.result === payload.yourRole;
+            // PERSPECTIVE FIX: Ensure 'p1Move' on UI is always YOUR move
+            const myMove = myRole === 'p1' ? payload.p1Move : payload.p2Move;
+            const oppMove = myRole === 'p1' ? payload.p2Move : payload.p1Move;
 
-            let resultMsg = "DRAW!";
-            if (!isDraw) {
-                resultMsg = amIWinner ? "YOU WON THE CLASH!" : "OPPONENT WON THE CLASH!";
-            }
+            if (typeof animateClash === 'function') animateClash(myMove, oppMove);
             
+            const isDraw = payload.result === 'draw';
+            const amIWinner = payload.result === myRole;
+
+            let resultMsg = isDraw ? "DRAW!" : (amIWinner ? "YOU WON THE CLASH!" : "OPPONENT WON THE CLASH!");
             if (typeof updateAnnouncer === 'function') updateAnnouncer(resultMsg);
 
             setTimeout(() => {
@@ -123,10 +128,8 @@ function handleServerMessage(data) {
                     resetRPSUI();
                 } else {
                     if (amIWinner) {
-                        // Winner gets the action buttons
                         if (typeof toggleActionPhase === 'function') toggleActionPhase(true);
                     } else {
-                        // Loser sees the waiting message
                         if (typeof toggleActionPhase === 'function') {
                             toggleActionPhase(false); 
                             updateAnnouncer("OPPONENT IS ATTACKING...");
@@ -137,20 +140,30 @@ function handleServerMessage(data) {
             break;
 
         case 'UPDATE_UI':
-            if (typeof updateScores === 'function') updateScores(payload.p1Score, payload.p2Score);
-            if (payload.p1Stats) updatePlayerBars('p1', payload.p1Stats);
-            if (payload.p2Stats) updatePlayerBars('p2', payload.p2Stats);
+            // PERSPECTIVE FIX: Sync Bars and Scores based on role
+            const scoreSelf = myRole === 'p1' ? payload.p1Score : payload.p2Score;
+            const scoreOpp = myRole === 'p1' ? payload.p2Score : payload.p1Score;
+            const statsSelf = myRole === 'p1' ? payload.p1Stats : payload.p2Stats;
+            const statsOpp = myRole === 'p1' ? payload.p2Stats : payload.p1Stats;
+
+            if (typeof updateScores === 'function') updateScores(scoreSelf, scoreOpp);
+            if (statsSelf) updatePlayerBars('p1', statsSelf);
+            if (statsOpp) updatePlayerBars('p2', statsOpp);
             
-            // Handle visual effects for local CPU or Online opponent actions
+            // ANIMATION PERSPECTIVE FIX:
+            // The person performing the action (Actor) should show the animation on their side.
             if (payload.cpuAction) {
+                // CPU is always p2 in local mode
                 if (typeof showActionEffect === 'function') showActionEffect('p2', payload.cpuAction);
             } else if (payload.onlineAction) {
                 if (typeof showActionEffect === 'function') {
-                    showActionEffect(payload.actorRole, payload.onlineAction);
+                    // If the Actor is ME, show the effect on 'p1' (Left/Self side).
+                    // Otherwise, show it on 'p2' (Right/Opponent side).
+                    const actorSide = (payload.actorRole === myRole) ? 'p1' : 'p2';
+                    showActionEffect(actorSide, payload.onlineAction);
                 }
             }
             
-            // Clear UI after the hit animation finishes
             setTimeout(() => resetRPSUI(), 1500);
             break;
 
@@ -159,11 +172,15 @@ function handleServerMessage(data) {
             break;
 
         case 'GAME_OVER':
-            const winText = payload.reason === 'p1_win' ? "Player 1 Wins!" : "Player 2 Wins!";
+            // Logic to determine winner based on perspective
+            const serverWinner = payload.reason.replace('_win', ''); // 'p1' or 'p2'
+            const didIWin = serverWinner === myRole;
+            const winText = didIWin ? "YOU WIN!" : "OPPONENT WINS!";
+            
             if (typeof updateAnnouncer === 'function') updateAnnouncer("GAME OVER!");
             
             setTimeout(() => {
-                alert(`Game Over! ${winText}`);
+                alert(winText);
                 localStorage.removeItem('fightingGameState'); 
                 if (payload.updatedUser && typeof updateAuthUI === 'function') updateAuthUI(payload.updatedUser);
                 if (typeof showView === 'function') showView('home');
@@ -210,7 +227,6 @@ function submitMove(move) {
     const user = JSON.parse(localStorage.getItem('rps_user_session'));
     if (!id) return;
     
-    // UI Feedback immediately upon selection
     if (typeof updateAnnouncer === 'function') updateAnnouncer("WAITING FOR OPPONENT...");
 
     sendToServer('SUBMIT_MOVE', { 
@@ -225,13 +241,6 @@ function submitAction(action) {
     const user = JSON.parse(localStorage.getItem('rps_user_session'));
     if (!id) return;
 
-    // Trigger local animation immediately for the actor
-    if (typeof showActionEffect === 'function') {
-        // Determine prefix based on if user is p1 or p2 in storage if possible, 
-        // but local state usually defaults to 'p1' for the current user's screen.
-        showActionEffect('p1', action); 
-    }
-
     sendToServer('SUBMIT_ACTION', { 
         gameId: id, 
         action, 
@@ -243,7 +252,6 @@ function submitAction(action) {
 
 function resetRPSUI() {
     if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
-    // Add logic here to reset move button highlights or RPS icons if needed
 }
 
 function updatePlayerBars(playerPrefix, stats) {
