@@ -13,30 +13,58 @@
 
     <main id="app-container">
 
+        <!-- 1. HOME SCREEN SECTION -->
         <section id="home-screen" class="view">
             <header class="home-header">
-                <div id="auth-header" class="user-stats">
-                    <div id="logged-out-view">
-                        <button id="btn-show-login" class="auth-btn">Login / Register</button>
-                    </div>
-                    <div id="logged-in-view" class="hidden">
+                <!-- Logged Out State -->
+                <div id="logged-out-view">
+                    <button id="btn-show-login" class="menu-btn small">Login / Register</button>
+                </div>
+                <!-- Logged In State -->
+                <div id="loggedInViewWrapper">
+                    <div id="logged-in-view" class="user-stats hidden">
                         <span id="display-username">Player Name</span>
                         <span id="display-record">Record: 0W - 0L</span>
-                        <button id="btn-logout" class="logout-link">Logout</button>
+                        <button id="btn-logout" class="text-link">Logout</button>
                     </div>
                 </div>
             </header>
 
             <div class="home-content">
                 <h1 class="game-logo">ANGER MANAGEMENT</h1>
+                
                 <div class="menu-options">
+                    <!-- Main Menu Buttons -->
                     <button id="btn-local" class="menu-btn">Local Game (CPU)</button>
-                    <button id="btn-online" class="menu-btn">Online Multiplayer</button>
+                    <button id="btn-online" class="menu-btn">Online Matchmaking</button>
+                    <button id="btn-friend-menu" class="menu-btn friend-btn">Play with Friend</button>
+
+                    <!-- Friend Room Sub-Menu (Hidden by default) -->
+                    <div id="friend-room-options" class="flex-column gap-15 hidden">
+                        
+                        <!-- Room Code Card (Shows after Create Room is clicked) -->
+                        <div id="room-code-display" class="room-card hidden">
+                            <p>Your Room Code</p>
+                            <h2 id="display-generated-code">----</h2>
+                            <small>Waiting for friend to join...</small>
+                        </div>
+
+                        <button id="btn-create-room" class="menu-btn secondary">Create Room</button>
+                        
+                        <div class="join-group">
+                            <input type="text" id="input-room-code" placeholder="CODE" maxlength="4">
+                            <button id="btn-join-room" class="menu-btn small">Join</button>
+                        </div>
+                        
+                        <button id="btn-back-menu" class="text-link">← Back to Menu</button>
+                    </div>
                 </div>
-                <p id="home-notification" class="notif-text hidden">Please Login to play Online</p>
+
+                <p id="home-notification" class="notif-text hidden">Notification text goes here</p>
             </div>
         </section>
 
+        <!-- 2. GAME SCREEN SECTION -->
         <section id="game-screen" class="view hidden">
             <div class="scoreboard flex-center">
                 <div class="score-box">
@@ -50,7 +78,7 @@
 
             <div class="arena-container">
                 <div class="fighter-side left">
-                    <h3 class="state-label">Your State of Mind</h3>
+                    <h3 class="state-label">Your State</h3>
                     <div class="stats-container">
                         <div class="progress-container"><div id="p1-anger" class="progress-bar anger" style="width: 50%;"></div></div>
                         <div class="progress-container"><div id="p1-satisfaction" class="progress-bar satisfaction" style="width: 25%;"></div></div>
@@ -62,7 +90,7 @@
                 </div>
 
                 <div class="fighter-side right">
-                    <h3 class="state-label">Opponent's State of Mind</h3>
+                    <h3 class="state-label">Opponent</h3>
                     <div class="stats-container">
                         <div class="progress-container"><div id="p2-anger" class="progress-bar anger" style="width: 50%;"></div></div>
                         <div class="progress-container"><div id="p2-satisfaction" class="progress-bar satisfaction" style="width: 25%;"></div></div>
@@ -75,6 +103,9 @@
             </div>
 
             <div class="controls-center">
+                <!-- NEW: Announcer Text Element added here -->
+                <div id="announcer-text" class="announcer">WAITING FOR MOVE...</div>
+
                 <div id="rps-controls" class="control-group">
                     <button id="btn-rock" class="move-btn"><img src="" alt="Rock"></button>
                     <button id="btn-paper" class="move-btn"><img src="" alt="Paper"></button>
@@ -91,6 +122,7 @@
             </div>
         </section>
 
+        <!-- 3. AUTH MODAL -->
         <div id="auth-modal" class="modal hidden">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
@@ -127,6 +159,7 @@
 
     </main>
 
+    <!-- SCRIPTS -->
     <script src="js/assets.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/socket.js"></script>

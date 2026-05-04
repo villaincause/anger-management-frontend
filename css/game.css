@@ -9,21 +9,21 @@
 
 .user-stats {
     position: absolute;
-    top: 10px; /* Moved upward from 20px */
+    top: 10px;
     right: 20px;
     z-index: 100;
-    text-align: center; /* Centered text for a cleaner look */
-    background: #fdf5e6; /* Solid cream background to match theme */
+    text-align: center;
+    background: #fdf5e6;
     padding: 12px 20px;
     border-radius: 12px;
-    border: 3px solid #4A2C2A; /* Thick border matching game buttons */
-    box-shadow: 0 4px 0 #4A2C2A; /* Added depth shadow */
+    border: 3px solid #4A2C2A;
+    box-shadow: 0 4px 0 #4A2C2A;
 }
 
 #logged-in-view {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Changed to center for better balance */
+    align-items: center;
     gap: 2px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #4A2C2A;
@@ -34,18 +34,18 @@
     font-size: 1.1rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #ffdddd;
+    color: #4A2C2A; /* Adjusted for readability on cream bg */
     margin-bottom: 2px;
 }
 
 #display-record {
     font-size: 0.8rem;
-    color: #ff9a9a; /* Slightly lighter brown for the record */
+    color: #8b4513; 
     margin-bottom: 8px;
 }
 
-.logout-link {
-    background: #8b0000; /* Dark red to signal "Exit" */
+.text-link {
+    background: #8b0000;
     color: white;
     border: none;
     padding: 5px 15px;
@@ -58,30 +58,10 @@
     box-shadow: 0 2px 0 #5a0000;
 }
 
-.logout-link:hover {
+.text-link:hover {
     background: #a52a2a;
     transform: translateY(-2px);
     box-shadow: 0 4px 0 #5a0000;
-}
-
-.logout-link:active {
-    transform: translateY(0);
-    box-shadow: 0 0 0 #5a0000;
-}
-
-.auth-btn {
-    padding: 10px 20px;
-    background: #4A2C2A;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.3s;
-}
-
-.auth-btn:hover {
-    background: #633b38;
 }
 
 /* --- 2. Scoreboard (Top Center) --- */
@@ -102,6 +82,8 @@
     padding: 10px 20px;
     border-radius: 10px;
     box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+    min-width: 60px;
+    text-align: center;
 }
 
 /* --- 3. Battle Arena --- */
@@ -110,7 +92,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0 5%;
-    height: 60vh;
+    height: 55vh;
     margin-top: 20px;
 }
 
@@ -162,13 +144,44 @@
     border-radius: 20px;
     width: 280px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.progress-container {
+    width: 100%;
+    height: 12px;
+    background: #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    transition: width 0.5s ease-in-out;
 }
 
 .progress-bar.anger { background-color: #ff4d4d; }
 .progress-bar.satisfaction { background-color: #4dff88; }
 .progress-bar.confidence { background-color: #4db8ff; }
 
-/* --- 5. Control Center (Bottom) --- */
+/* --- 5. Announcer Text (The New Part) --- */
+.announcer {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #FF4500; /* Vibrant Orange-Red */
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 5px;
+    min-height: 2.2rem;
+    text-shadow: 2px 2px 0px #FFF, 4px 4px 0px rgba(0,0,0,0.1);
+    z-index: 20;
+    pointer-events: none;
+}
+
+/* --- 6. Control Center (Bottom) --- */
 .controls-center {
     position: absolute;
     bottom: 5%;
@@ -177,22 +190,22 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
     width: 100%;
 }
 
 .control-group {
     display: flex;
     gap: 25px;
-    padding: 20px;
+    padding: 15px 30px;
     background: rgba(255, 255, 255, 0.3);
-    border-radius: 50px;
+    border-radius: 60px;
     backdrop-filter: blur(5px);
 }
 
 .move-btn, .action-btn {
-    width: 110px;
-    height: 110px;
+    width: 100px;
+    height: 100px;
     background: white;
     border: 5px solid #4A2C2A;
     border-radius: 50%;
@@ -205,18 +218,23 @@
 }
 
 .move-btn img, .action-btn img {
-    width: 65%;
-    height: 65%;
+    width: 60%;
+    height: 60%;
     object-fit: contain;
 }
 
 .move-btn:hover, .action-btn:hover {
-    transform: translateY(-12px);
-    box-shadow: 0 18px 0 #4A2C2A;
+    transform: translateY(-10px);
+    box-shadow: 0 16px 0 #4A2C2A;
 }
 
-#btn-give-up {
-    margin-top: 15px;
+.move-btn:active, .action-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #4A2C2A;
+}
+
+.secondary-btn {
+    margin-top: 10px;
     padding: 10px 25px;
     background: #4A2C2A;
     color: white;
@@ -227,8 +245,11 @@
     transition: background 0.2s;
 }
 
-/* --- 6. Clash & Hit Animations --- */
+.hidden {
+    display: none !important;
+}
 
+/* --- 7. Clash & Hit Animations --- */
 .clash-p1 { animation: punchP1 0.4s ease-out; }
 .clash-p2 { animation: punchP2 0.4s ease-out; }
 

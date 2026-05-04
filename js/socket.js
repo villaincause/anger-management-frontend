@@ -4,6 +4,7 @@
 
 let socket;
 let currentGameId = null;
+let myRole = 'p1'; // Default to p1 for Local play
 
 /**
  * FAILSAFE: Retrieves the Game ID from memory or storage
@@ -34,11 +35,8 @@ function initSocket() {
 
     socket.onopen = () => {
         console.log('Connected to Anger Management Server');
-        
-        // Restore game ID immediately on connection
         getActiveGameId();
 
-        // Re-authenticate with server
         const savedUser = localStorage.getItem('rps_user_session');
         if (savedUser) {
             const user = JSON.parse(savedUser);
@@ -63,38 +61,110 @@ function handleServerMessage(data) {
             break;
 
         case 'AUTH_ERROR':
-            if (!payload.isReauth) alert(`Authentication Failed: ${payload.message}`);
+            if (!payload.isReauth) alert(`Error: ${payload.message}`);
+            break;
+
+        case 'ROOM_CREATED':
+            const display = document.getElementById('room-code-display');
+            const codeText = document.getElementById('display-generated-code');
+            const createBtn = document.getElementById('btn-create-room');
+            
+            if (display && codeText) {
+                display.classList.remove('hidden');
+                codeText.innerText = payload.roomCode;
+            }
+
+            if (createBtn) createBtn.classList.add('hidden');
+
+            if (typeof showNotification === 'function') {
+                showNotification(`Room Created! Share code: ${payload.roomCode}`);
+            }
+            break;
+
+        case 'WAITING_FOR_OPPONENT':
+            if (typeof showNotification === 'function') {
+                showNotification("Waiting for an opponent to join...");
+            }
+            if (typeof updateAnnouncer === 'function') updateAnnouncer("WAITING FOR PLAYER...");
             break;
 
         case 'GAME_STARTED':
             currentGameId = payload.id;
+            myRole = payload.yourRole || 'p1'; // Store perspective role
             saveGameIdToStorage(payload.id);
-            if (typeof updateScores === 'function') updateScores(0, 0);
-            if (typeof updateAllBars === 'function') updateAllBars(payload.p1.stats, payload.p2.stats);
+            
+            const codeArea = document.getElementById('room-code-display');
+            const friendOptions = document.getElementById('friend-room-options');
+            
+            if (codeArea) codeArea.classList.add('hidden');
+            if (friendOptions) friendOptions.classList.add('hidden');
+
+            if (typeof showView === 'function') showView('game');
+
+            // PERSPECTIVE FIX: Map Server Data to UI Sides
+            const pSelf = myRole === 'p1' ? payload.p1 : payload.p2;
+            const pOpp = myRole === 'p1' ? payload.p2 : payload.p1;
+
+            if (typeof updateScores === 'function') updateScores(pSelf.score, pOpp.score);
+            if (typeof updateAllBars === 'function') updateAllBars(pSelf.stats, pOpp.stats);
+            if (typeof updateAnnouncer === 'function') updateAnnouncer("MATCH STARTED!");
             break;
 
         case 'ROUND_RESULT':
-            if (typeof updateScores === 'function') updateScores(payload.p1Score || 0, payload.p2Score || 0);
-            if (typeof animateClash === 'function') animateClash(payload.p1Move, payload.p2Move);
+            // PERSPECTIVE FIX: Ensure 'p1Move' on UI is always YOUR move
+            const myMove = myRole === 'p1' ? payload.p1Move : payload.p2Move;
+            const oppMove = myRole === 'p1' ? payload.p2Move : payload.p1Move;
+
+            if (typeof animateClash === 'function') animateClash(myMove, oppMove);
             
-            if (payload.result === 'p1') {
-                setTimeout(() => typeof toggleActionPhase === 'function' && toggleActionPhase(true), 1200);
-            } else if (payload.result === 'p2') {
-                if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
-            }
+            const isDraw = payload.result === 'draw';
+            const amIWinner = payload.result === myRole;
+
+            let resultMsg = isDraw ? "DRAW!" : (amIWinner ? "YOU WON THE CLASH!" : "OPPONENT WON THE CLASH!");
+            if (typeof updateAnnouncer === 'function') updateAnnouncer(resultMsg);
+
+            setTimeout(() => {
+                if (isDraw) {
+                    resetRPSUI();
+                } else {
+                    if (amIWinner) {
+                        if (typeof toggleActionPhase === 'function') toggleActionPhase(true);
+                    } else {
+                        if (typeof toggleActionPhase === 'function') {
+                            toggleActionPhase(false); 
+                            updateAnnouncer("OPPONENT IS ATTACKING...");
+                        }
+                    }
+                }
+            }, 1200);
             break;
 
         case 'UPDATE_UI':
-            if (typeof updateScores === 'function') updateScores(payload.p1Score, payload.p2Score);
-            if (payload.p1Stats) updatePlayerBars('p1', payload.p1Stats);
-            if (payload.p2Stats) updatePlayerBars('p2', payload.p2Stats);
+            // PERSPECTIVE FIX: Sync Bars and Scores based on role
+            const scoreSelf = myRole === 'p1' ? payload.p1Score : payload.p2Score;
+            const scoreOpp = myRole === 'p1' ? payload.p2Score : payload.p1Score;
+            const statsSelf = myRole === 'p1' ? payload.p1Stats : payload.p2Stats;
+            const statsOpp = myRole === 'p1' ? payload.p2Stats : payload.p1Stats;
+
+            if (typeof updateScores === 'function') updateScores(scoreSelf, scoreOpp);
+            if (statsSelf) updatePlayerBars('p1', statsSelf);
+            if (statsOpp) updatePlayerBars('p2', statsOpp);
             
+            // ANIMATION PERSPECTIVE FIX:
+            // The person performing the action (Actor) should show the animation on their side.
             if (payload.cpuAction) {
+                // CPU is always p2 in local mode
+                if (typeof showActionEffect === 'function') showActionEffect('p2', payload.cpuAction);
+            } else if (payload.onlineAction) {
                 if (typeof showActionEffect === 'function') {
-                    showActionEffect('p2', payload.cpuAction); 
+                    // If the Actor is ME, show the effect on 'p1' (Left/Self side).
+                    // Otherwise, show it on 'p2' (Right/Opponent side).
+                    const actorSide = (payload.actorRole === myRole) ? 'p1' : 'p2';
+                    showActionEffect(actorSide, payload.onlineAction);
                 }
-                setTimeout(() => resetRPSUI(), 1500);
             }
+            
+            setTimeout(() => resetRPSUI(), 1500);
             break;
 
         case 'RESET_ROUND':
@@ -102,13 +172,30 @@ function handleServerMessage(data) {
             break;
 
         case 'GAME_OVER':
-            alert(`Game Over! Reason: ${payload.reason}`);
-            localStorage.removeItem('fightingGameState'); 
-            if (payload.updatedUser && typeof updateAuthUI === 'function') updateAuthUI(payload.updatedUser);
-            showView('home');
+            // Logic to determine winner based on perspective
+            const serverWinner = payload.reason.replace('_win', ''); // 'p1' or 'p2'
+            const didIWin = serverWinner === myRole;
+            const winText = didIWin ? "YOU WIN!" : "OPPONENT WINS!";
+            
+            if (typeof updateAnnouncer === 'function') updateAnnouncer("GAME OVER!");
+            
+            setTimeout(() => {
+                alert(winText);
+                localStorage.removeItem('fightingGameState'); 
+                if (payload.updatedUser && typeof updateAuthUI === 'function') updateAuthUI(payload.updatedUser);
+                if (typeof showView === 'function') showView('home');
+            }, 500);
+            break;
+            
+        case 'ERROR':
+            if (typeof showNotification === 'function') showNotification(payload.message);
             break;
     }
 }
+
+/**
+ * DATA SENDERS
+ */
 
 function saveGameIdToStorage(id) {
     const saved = localStorage.getItem('fightingGameState');
@@ -131,29 +218,36 @@ function sendAuthRequest(mode, data) {
     sendToServer(mode, data);
 }
 
-function requestStartGame(mode, username) {
-    sendToServer('START_GAME', { mode, username });
+function requestStartGame(mode, username, userId = null, roomCode = null, action = null) {
+    sendToServer('START_GAME', { mode, username, userId, roomCode, action });
 }
 
 function submitMove(move) {
     const id = getActiveGameId();
-    if (!id) {
-        console.error("No active Game ID found!");
-        return;
-    }
-    sendToServer('SUBMIT_MOVE', { gameId: id, move });
+    const user = JSON.parse(localStorage.getItem('rps_user_session'));
+    if (!id) return;
+    
+    if (typeof updateAnnouncer === 'function') updateAnnouncer("WAITING FOR OPPONENT...");
+
+    sendToServer('SUBMIT_MOVE', { 
+        gameId: id, 
+        move, 
+        userId: user ? user.id : null 
+    });
 }
 
 function submitAction(action) {
     const id = getActiveGameId();
+    const user = JSON.parse(localStorage.getItem('rps_user_session'));
     if (!id) return;
 
-    if (typeof showActionEffect === 'function') {
-        showActionEffect('p1', action); 
-    }
-    sendToServer('SUBMIT_ACTION', { gameId: id, action });
+    sendToServer('SUBMIT_ACTION', { 
+        gameId: id, 
+        action, 
+        userId: user ? user.id : null 
+    });
+
     if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
-    setTimeout(() => resetRPSUI(), 1000);
 }
 
 function resetRPSUI() {

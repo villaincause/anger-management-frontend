@@ -1,28 +1,26 @@
 /**
- * ui.js - The Visual Engine with Persistence
+ * ui.js - The Visual Engine (Perspective-Aware)
  */
 
-let p1Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
-let p2Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
+let p1Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 }; // Always "Self" (Left)
+let p2Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 }; // Always "Opponent" (Right)
 
-// Initialize selectors as null and fill them when needed
 let bars = null;
 let hands = null;
 let scores = null;
+let announcer = null;
 
 /**
- * SAVING STATE: Updated to preserve gameId from socket.js
+ * SAVING STATE
  */
 function saveGameState() {
-    // 1. Grab existing data to preserve the gameId
     const existing = localStorage.getItem('fightingGameState');
     const oldState = existing ? JSON.parse(existing) : {};
 
     const gameState = {
-        ...oldState, // This preserves the gameId saved by socket.js
+        ...oldState, 
         p1Stats,
         p2Stats,
-        // Check which control set is currently visible to remember the phase
         phase: document.getElementById('rps-controls')?.classList.contains('hidden') ? 'action' : 'rps',
         timestamp: new Date().getTime()
     };
@@ -30,7 +28,7 @@ function saveGameState() {
 }
 
 /**
- * LOADING STATE: Call this in your main init/window.onload
+ * LOADING STATE
  */
 function loadGameState() {
     const saved = localStorage.getItem('fightingGameState');
@@ -38,12 +36,12 @@ function loadGameState() {
 
     const state = JSON.parse(saved);
     
-    // Restore variables
     if (state.p1Stats) p1Stats = state.p1Stats;
     if (state.p2Stats) p2Stats = state.p2Stats;
 
-    // Sync UI
     initSelectors();
+    
+    // Render current visual state
     ['p1', 'p2'].forEach(p => {
         const stats = p === 'p1' ? p1Stats : p2Stats;
         updateBar(p, 'anger', stats.anger);
@@ -52,7 +50,6 @@ function loadGameState() {
     });
     updateScores(p1Stats.score, p2Stats.score);
     
-    // Restore phase
     toggleActionPhase(state.phase === 'action');
     
     return true;
@@ -81,13 +78,12 @@ function initSelectors() {
         p1: document.getElementById('p1-score'), 
         p2: document.getElementById('p2-score')
     };
+
+    announcer = document.getElementById('announcer-text');
 }
 
 function initUIAssets() {
-    if (typeof GAME_ASSETS === 'undefined') {
-        console.warn("GAME_ASSETS not found. Waiting for assets...");
-        return;
-    }
+    if (typeof GAME_ASSETS === 'undefined') return;
 
     const moveButtons = document.querySelectorAll('.move-btn img');
     if (moveButtons.length >= 3) {
@@ -108,6 +104,21 @@ function initUIAssets() {
     if (hands.p2) hands.p2.src = GAME_ASSETS.hands.rock;
 }
 
+/**
+ * Updates the text above the controls
+ */
+function updateAnnouncer(message) {
+    if (!announcer) initSelectors();
+    if (announcer) {
+        announcer.innerText = message;
+    }
+}
+
+/**
+ * Triggers the hit animation and visual swap.
+ * @param {string} victim - 'p1' (left/self) or 'p2' (right/opponent)
+ * @param {string} action - the action name (punch, kick, etc)
+ */
 function showActionEffect(victim, action) {
     if (!hands) initSelectors();
     const handElement = hands[victim];
@@ -115,51 +126,62 @@ function showActionEffect(victim, action) {
 
     const wrapper = handElement.parentElement;
     wrapper.classList.remove('action-hit');
-    void wrapper.offsetWidth; 
+    void wrapper.offsetWidth; // Force reflow
 
+    // Temporarily change the hand image to the action visual (the "hit" state)
     if (GAME_ASSETS.visuals && GAME_ASSETS.visuals[action]) {
         handElement.src = GAME_ASSETS.visuals[action];
     }
     
     wrapper.classList.add('action-hit');
 
+    // Reset back to idle state after animation
     setTimeout(() => {
         wrapper.classList.remove('action-hit');
         handElement.src = GAME_ASSETS.hands.rock;
     }, 800);
 }
 
-function updateBar(player, type, value) {
+/**
+ * Standard bar updater
+ * @param {string} playerPrefix - 'p1' or 'p2'
+ */
+function updateBar(playerPrefix, type, value) {
     if (!bars) initSelectors();
     const clampedValue = Math.max(0, Math.min(100, value));
     
-    if (bars[player] && bars[player][type]) {
-        bars[player][type].style.width = `${clampedValue}%`;
+    if (bars[playerPrefix] && bars[playerPrefix][type]) {
+        bars[playerPrefix][type].style.width = `${clampedValue}%`;
     }
     
-    if(player === 'p1') p1Stats[type] = clampedValue;
+    if(playerPrefix === 'p1') p1Stats[type] = clampedValue;
     else p2Stats[type] = clampedValue;
 
     saveGameState(); 
 }
 
-function updateScores(p1Score, p2Score) {
+/**
+ * Perspective-aware score updater
+ */
+function updateScores(s1, s2) {
     if (!scores) initSelectors();
-    const s1 = (p1Score != null) ? p1Score : 0;
-    const s2 = (p2Score != null) ? p2Score : 0;
     
-    if (scores.p1) scores.p1.innerText = s1;
-    if (scores.p2) scores.p2.innerText = s2;
+    if (scores.p1) scores.p1.innerText = s1 || 0;
+    if (scores.p2) scores.p2.innerText = s2 || 0;
     
-    p1Stats.score = s1;
-    p2Stats.score = s2;
+    p1Stats.score = s1 || 0;
+    p2Stats.score = s2 || 0;
     
     saveGameState();
 }
 
+/**
+ * Handles the RPS animation clash
+ */
 function animateClash(p1Move, p2Move) {
     if (!hands) initSelectors();
     
+    // In multiplayer, p1Move is YOUR move, p2Move is OPPONENT'S move
     hands.p1.src = GAME_ASSETS.hands[p1Move];
     hands.p2.src = GAME_ASSETS.hands[p2Move];
 
@@ -173,24 +195,32 @@ function animateClash(p1Move, p2Move) {
     hands.p2.classList.add('clash-p2');
 }
 
+/**
+ * Global UI Reset
+ */
 function resetUI() {
     localStorage.removeItem('fightingGameState'); 
     initSelectors();
     
+    document.getElementById('room-code-display')?.classList.add('hidden');
+    
     p1Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
     p2Stats = { anger: 50, satisfaction: 25, confidence: 0, score: 0 };
     
-    const players = ['p1', 'p2'];
-    players.forEach(p => {
+    ['p1', 'p2'].forEach(p => {
         updateBar(p, 'anger', 50);
         updateBar(p, 'satisfaction', 25);
         updateBar(p, 'confidence', 0);
     });
     
     updateScores(0, 0);
+    updateAnnouncer("CHOOSE YOUR MOVE");
     initUIAssets();
 }
 
+/**
+ * Switches between RPS buttons and Action buttons
+ */
 function toggleActionPhase(show) {
     const rpsControls = document.getElementById('rps-controls');
     const actionControls = document.getElementById('action-controls');
@@ -200,10 +230,28 @@ function toggleActionPhase(show) {
     if (show) {
         rpsControls.classList.add('hidden');
         actionControls.classList.remove('hidden');
+        updateAnnouncer("YOU WON! ATTACK!"); 
     } else {
         rpsControls.classList.remove('hidden');
         actionControls.classList.add('hidden');
+        // Note: handleServerMessage in socket.js will override this text 
+        // if the player is actually waiting for an opponent's turn.
+        updateAnnouncer("CHOOSE YOUR MOVE"); 
     }
     
     saveGameState(); 
+}
+
+/**
+ * Updates all bars for a player at once
+ * @param {string} playerPrefix - 'p1' or 'p2'
+ * @param {object} stats - {anger, satisfaction, confidence}
+ */
+function updateAllBars(p1StatsIn, p2StatsIn) {
+    if (!p1StatsIn || !p2StatsIn) return;
+    
+    ['anger', 'satisfaction', 'confidence'].forEach(type => {
+        updateBar('p1', type, p1StatsIn[type]);
+        updateBar('p2', type, p2StatsIn[type]);
+    });
 }
