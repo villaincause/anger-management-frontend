@@ -28,6 +28,10 @@ const btnBackMenu = document.getElementById('btn-back-menu');
 const inputRoomCode = document.getElementById('input-room-code');
 const roomCodeDisplay = document.getElementById('room-code-display');
 
+// NEW: Matchmaking Overlay Selectors
+const matchmakingOverlay = document.getElementById('matchmaking-overlay');
+const btnCancelQueue = document.getElementById('btn-cancel-queue');
+
 const loginForm = document.getElementById('form-login');
 const registerForm = document.getElementById('form-register');
 const linkToReg = document.getElementById('link-to-register');
@@ -79,7 +83,7 @@ function updateAuthUI(user) {
     }
 }
 
-// 4. Event Listeners (THE ONLY SOURCE OF TRUTH)
+// 4. Event Listeners
 
 // FRIEND ROOM NAVIGATION
 if (btnFriendMenu) {
@@ -148,6 +152,15 @@ if (btnJoinRoom) {
     });
 }
 
+// NEW: Matchmaking Cancel Listener
+if (btnCancelQueue) {
+    btnCancelQueue.addEventListener('click', () => {
+        if (typeof leaveQueue === 'function') {
+            leaveQueue();
+        }
+    });
+}
+
 // AUTH HANDLERS
 if (btnShowAuth) btnShowAuth.addEventListener('click', () => authModal.classList.remove('hidden'));
 if (closeModal) closeModal.addEventListener('click', () => authModal.classList.add('hidden'));
@@ -195,8 +208,12 @@ if (btnLogout) btnLogout.addEventListener('click', () => updateAuthUI(null));
 if (btnGiveUp) {
     btnGiveUp.addEventListener('click', () => {
         if (confirm("Are you sure you want to give up?")) {
-            localStorage.removeItem('fightingGameState');
-            showView('home');
+            if (typeof giveUp === 'function') {
+                giveUp(); 
+            } else {
+                localStorage.removeItem('fightingGameState');
+                showView('home');
+            }
         }
     });
 }
@@ -212,10 +229,20 @@ function showNotification(text) {
 function initGame(mode, username) {
     if (typeof resetUI === "function") resetUI();
     const userId = currentUser ? currentUser.id : null;
+    
     if (typeof requestStartGame === "function") {
         requestStartGame(mode, username, userId);
     }
-    if(mode === 'local') showView('game');
+
+    // Switch to game screen
+    showView('game');
+
+    // If online mode, specifically trigger the visual matchmaking overlay
+    if (mode === 'online') {
+        if (typeof showMatchmaking === 'function') {
+            showMatchmaking();
+        }
+    }
 }
 
 function initControls() {
@@ -242,6 +269,7 @@ function initControls() {
     });
 }
 
+// BOOTSTRAP LOGIC
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof initSelectors === "function") initSelectors();
     if (typeof initSocket === "function") initSocket();
@@ -250,14 +278,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedUser = localStorage.getItem('rps_user_session');
     if (savedUser) updateAuthUI(JSON.parse(savedUser));
 
-    let gameRestored = false;
-    if (typeof loadGameState === "function") gameRestored = loadGameState();
-
     if (typeof initUIAssets === "function") initUIAssets();
 
-    if (gameRestored) {
+    const savedState = localStorage.getItem('fightingGameState');
+    let hasActiveGame = false;
+
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            if (state.gameId) {
+                hasActiveGame = true;
+                if (typeof loadGameState === "function") loadGameState();
+            }
+        } catch (e) {
+            console.error("Error checking saved state", e);
+        }
+    }
+
+    if (hasActiveGame) {
         showView('game');
     } else {
-        showView('home');
+        showView('home'); 
     }
 });
