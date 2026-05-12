@@ -1,6 +1,6 @@
 /* 1. Layout for the Home View */
 #home-screen {
-    display: flex; /* CRITICAL: This was missing */
+    display: flex; 
     flex-direction: column;
     height: 100vh;
     justify-content: space-between;
@@ -10,32 +10,33 @@
     overflow: hidden;
 }
 
-/* 2. Header (Top Right Stats) */
+/* 2. Header (Top Right Stats & Auth Button) */
 .home-header {
     width: 100%;
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     padding: 0 40px;
+    gap: 15px;
 }
 
 .user-stats {
     background: #4A2C2A;
     color: #FFF1D3;
-    padding: 15px 25px;
+    padding: 12px 20px;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 15px rgba(74, 44, 42, 0.2);
 }
 
-#display-username {
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-#display-record {
+/* Specific small button for the header */
+#btn-show-login {
+    height: fit-content;
+    width: auto;
+    padding: 10px 20px;
     font-size: 0.9rem;
-    opacity: 0.9;
+    border-radius: 50px;
 }
 
 /* 3. Central Content & Logo */
@@ -52,9 +53,11 @@
     font-size: 80px;
     text-shadow: 4px 4px 0px rgba(74, 44, 42, 0.1);
     transform: rotate(-2deg);
+    color: #4A2C2A;
+    font-weight: 900;
 }
 
-/* 4. Menu Buttons */
+/* 4. Menu Buttons (Main UI) */
 .menu-options {
     display: flex;
     flex-direction: column;
@@ -64,7 +67,7 @@
 
 .menu-btn {
     width: 280px;
-    padding: 20px;
+    padding: 18px;
     font-size: 1.2rem;
     font-weight: bold;
     text-transform: uppercase;
@@ -75,6 +78,8 @@
     box-shadow: 0 6px 0px #4A2C2A;
     transition: all 0.1s ease;
     cursor: pointer;
+    text-align: center;
+    outline: none;
 }
 
 .menu-btn:active {
@@ -87,32 +92,124 @@
     color: #FFF1D3;
 }
 
-/* 5. Online/Multiplayer Highlight */
+/* 5. Auth Modal Styling */
+.modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(74, 44, 42, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+form .menu-btn {
+    width: 100%;
+}
+
+.modal-content {
+    background: #FFF1D3;
+    padding: 35px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 380px;
+    position: relative;
+    border: 4px solid #4A2C2A;
+    box-shadow: 0 15px 0px rgba(0,0,0,0.1);
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px; right: 20px;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #4A2C2A;
+    line-height: 1;
+}
+
+/* Form Layout Fixes */
+.auth-form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-form-container h2 {
+    color: #4A2C2A;
+    margin-bottom: 15px;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-group label {
+    font-weight: bold;
+    color: #4A2C2A;
+    font-size: 0.85rem;
+    margin-left: 5px;
+}
+
+.input-group input, 
+.input-group select {
+    padding: 12px;
+    border: 2px solid #4A2C2A;
+    border-radius: 12px;
+    background: #fdfdfd;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+/* THE FIXED LOGIN/SUBMIT BUTTON */
+.btn-submit {
+    margin-top: 20px;
+    width: 100%;
+    padding: 14px;
+    background: white;
+    color: #4A2C2A;
+    border: 3px solid #4A2C2A;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 0px #4A2C2A;
+    transition: all 0.1s ease;
+}
+
+.btn-submit:hover {
+    background: #4A2C2A;
+    color: #FFF1D3;
+}
+
+.btn-submit:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0px #4A2C2A;
+}
+
+/* 6. Online/Multiplayer Specials */
 #btn-online {
     background-color: #f1c40f; 
 }
 
-#btn-online:hover {
-    background-color: #4A2C2A;
+/* --- 7. Friend Room UI Elements --- */
+#friend-room-options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
 }
 
-.friend-btn {
-    background-color: #e67e22; 
-    color: white;
-}
-
-/* 6. Friend Room UI Elements */
-.flex-column { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-}
-
-.gap-15 { 
-    gap: 15px; 
-}
-
-/* Dedicated box for displaying the generated Room Code */
 .room-card {
     background: white;
     border: 3px dashed #4A2C2A;
@@ -120,59 +217,55 @@
     border-radius: 15px;
     text-align: center;
     width: 280px;
-    margin-bottom: 10px;
-    box-shadow: 0 4px 0px rgba(74, 44, 42, 0.1);
-}
-
-.room-card p {
-    margin: 0;
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: #4A2C2A;
-    text-transform: uppercase;
 }
 
 .room-card h2 {
-    font-size: 3rem;
+    font-size: 2.8rem;
     color: #e67e22;
     margin: 10px 0;
-    letter-spacing: 8px;
-    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 6px;
+    font-family: monospace;
 }
 
-.room-card small {
-    display: block;
-    color: #7f8c8d;
-    font-style: italic;
-}
-
+/* FIX: Join Group Layout */
 .join-group {
     display: flex;
     gap: 10px;
-    width: 280px;
+    width: 280px; /* Matching the width of main buttons */
+    height: 55px;
 }
 
 #input-room-code {
-    width: 60%;
+    flex: 2; /* Takes up more space */
     padding: 10px;
     border: 3px solid #4A2C2A;
     border-radius: 12px;
-    font-family: inherit;
-    font-weight: bold;
     text-align: center;
+    font-weight: bold;
     font-size: 1.1rem;
-    outline: none;
+    text-transform: uppercase;
 }
 
-.menu-btn.small {
-    width: 40%;
-    padding: 10px;
-    font-size: 1rem;
+/* FIX: Small menu button override for Join */
+.join-group .menu-btn.small {
+    flex: 1;
+    width: auto; /* Overrides the 280px */
+    padding: 0 15px;
+    font-size: 0.9rem;
     border-radius: 12px;
+    box-shadow: 0 4px 0px #4A2C2A;
 }
 
-.menu-btn.secondary {
-    background-color: #ecf0f1;
+/* --- Utility & Form Overrides --- */
+.hidden {
+    display: none !important;
+}
+
+/* Prevents buttons inside forms from inheriting the 280px main-menu width */
+#auth-modal .menu-btn {
+    width: 100% !important;
+    padding: 12px !important;
+    font-size: 1rem !important;
 }
 
 .text-link {
@@ -183,8 +276,17 @@
     cursor: pointer;
     text-decoration: underline;
     margin-top: 10px;
+    display: block;
+    text-align: center;
+    font-size: 0.9rem;
+    text-decoration: none;
 }
 
-.hidden {
-    display: none !important;
+/* Back button specific styling */
+#btn-back-menu {
+    background: #4A2C2A;
+    color: white;
+    text-decoration: none;
+    padding: 5px 15px;
+    border-radius: 5px;
 }

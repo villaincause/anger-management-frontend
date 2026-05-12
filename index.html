@@ -13,18 +13,15 @@
 
     <main id="app-container">
 
-        <!-- 1. HOME SCREEN SECTION -->
         <section id="home-screen" class="view">
             <header class="home-header">
-                <!-- Logged Out State -->
                 <div id="logged-out-view">
                     <button id="btn-show-login" class="menu-btn small">Login / Register</button>
                 </div>
-                <!-- Logged In State -->
                 <div id="loggedInViewWrapper">
                     <div id="logged-in-view" class="user-stats hidden">
-                        <span id="display-username">Player Name</span>
-                        <span id="display-record">Record: 0W - 0L</span>
+                        <span id="display-username" class="username-text">Player Name</span>
+                        <span id="display-record" class="record-text">Record: 0W - 0L</span>
                         <button id="btn-logout" class="text-link">Logout</button>
                     </div>
                 </div>
@@ -34,15 +31,12 @@
                 <h1 class="game-logo">ANGER MANAGEMENT</h1>
                 
                 <div class="menu-options">
-                    <!-- Main Menu Buttons -->
                     <button id="btn-local" class="menu-btn">Local Game (CPU)</button>
                     <button id="btn-online" class="menu-btn">Online Matchmaking</button>
                     <button id="btn-friend-menu" class="menu-btn friend-btn">Play with Friend</button>
 
-                    <!-- Friend Room Sub-Menu (Hidden by default) -->
                     <div id="friend-room-options" class="flex-column gap-15 hidden">
                         
-                        <!-- Room Code Card (Shows after Create Room is clicked) -->
                         <div id="room-code-display" class="room-card hidden">
                             <p>Your Room Code</p>
                             <h2 id="display-generated-code">----</h2>
@@ -60,12 +54,20 @@
                     </div>
                 </div>
 
-                <p id="home-notification" class="notif-text hidden">Notification text goes here</p>
+                <p id="home-notification" class="notif-text hidden"></p>
             </div>
         </section>
 
-        <!-- 2. GAME SCREEN SECTION -->
         <section id="game-screen" class="view hidden">
+            <div id="matchmaking-overlay" class="overlay hidden">
+                <div class="overlay-content">
+                    <div class="loading-spinner"></div>
+                    <h2 id="matchmaking-status">SEARCHING FOR PLAYER...</h2>
+                    <p>Please wait while we find an opponent.</p>
+                    <button id="btn-cancel-queue" class="secondary-btn">Leave Queue</button>
+                </div>
+            </div>
+
             <div class="scoreboard flex-center">
                 <div class="score-box">
                     <span id="p1-score">0</span>
@@ -80,49 +82,71 @@
                 <div class="fighter-side left">
                     <h3 class="state-label">Your State</h3>
                     <div class="stats-container">
-                        <div class="progress-container"><div id="p1-anger" class="progress-bar anger" style="width: 50%;"></div></div>
-                        <div class="progress-container"><div id="p1-satisfaction" class="progress-bar satisfaction" style="width: 25%;"></div></div>
-                        <div class="progress-container"><div id="p1-confidence" class="progress-bar confidence" style="width: 0%;"></div></div>
+                        <div class="progress-container">
+                            <div id="p1-anger" class="progress-bar anger" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div id="p1-satisfaction" class="progress-bar satisfaction" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div id="p1-confidence" class="progress-bar confidence" style="width: 0%;"></div>
+                        </div>
                     </div>
                     <div class="hand-wrapper">
-                        <img id="p1-hand-visual" src="" alt="P1 Hand">
+                        <img id="p1-hand-visual" src="" alt="Player Hand">
                     </div>
                 </div>
 
                 <div class="fighter-side right">
                     <h3 class="state-label">Opponent</h3>
                     <div class="stats-container">
-                        <div class="progress-container"><div id="p2-anger" class="progress-bar anger" style="width: 50%;"></div></div>
-                        <div class="progress-container"><div id="p2-satisfaction" class="progress-bar satisfaction" style="width: 25%;"></div></div>
-                        <div class="progress-container"><div id="p2-confidence" class="progress-bar confidence" style="width: 0%;"></div></div>
+                        <div class="progress-container">
+                            <div id="p2-anger" class="progress-bar anger" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div id="p2-satisfaction" class="progress-bar satisfaction" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div id="p2-confidence" class="progress-bar confidence" style="width: 0%;"></div>
+                        </div>
                     </div>
                     <div class="hand-wrapper">
-                        <img id="p2-hand-visual" src="" alt="P2 Hand">
+                        <img id="p2-hand-visual" src="" alt="Opponent Hand">
                     </div>
                 </div>
             </div>
 
             <div class="controls-center">
-                <!-- NEW: Announcer Text Element added here -->
                 <div id="announcer-text" class="announcer">WAITING FOR MOVE...</div>
 
                 <div id="rps-controls" class="control-group">
-                    <button id="btn-rock" class="move-btn"><img src="" alt="Rock"></button>
-                    <button id="btn-paper" class="move-btn"><img src="" alt="Paper"></button>
-                    <button id="btn-scissors" class="move-btn"><img src="" alt="Scissors"></button>
+                    <button id="btn-rock" class="move-btn" title="Rock">
+                        <img src="" alt="Rock">
+                    </button>
+                    <button id="btn-paper" class="move-btn" title="Paper">
+                        <img src="" alt="Paper">
+                    </button>
+                    <button id="btn-scissors" class="move-btn" title="Scissors">
+                        <img src="" alt="Scissors">
+                    </button>
                 </div>
 
                 <div id="action-controls" class="control-group hidden">
-                    <button id="btn-punch" class="action-btn"><img src="" alt="Punch"></button>
-                    <button id="btn-kick" class="action-btn"><img src="" alt="Kick"></button>
-                    <button id="btn-slap" class="action-btn"><img src="" alt="Slap"></button>
+                    <button id="btn-punch" class="action-btn" title="Punch">
+                        <img src="" alt="Punch">
+                    </button>
+                    <button id="btn-kick" class="action-btn" title="Kick">
+                        <img src="" alt="Kick">
+                    </button>
+                    <button id="btn-slap" class="action-btn" title="Slap">
+                        <img src="" alt="Slap">
+                    </button>
                 </div>
                 
                 <button id="btn-give-up" class="secondary-btn">Give Up</button>
             </div>
         </section>
 
-        <!-- 3. AUTH MODAL -->
         <div id="auth-modal" class="modal hidden">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
@@ -148,8 +172,10 @@
                             <option value="female">Female</option>
                             <option value="other">Other</option>
                         </select>
-                        <label>Date of Birth</label>
-                        <input type="date" id="reg-dob" required>
+                        <div class="input-group">
+                            <label for="reg-dob">Date of Birth</label>
+                            <input type="date" id="reg-dob" required>
+                        </div>
                         <button type="submit" class="menu-btn">Sign Up</button>
                     </form>
                     <p>Already have an account? <a href="#" id="link-to-login">Login here</a></p>
@@ -159,7 +185,6 @@
 
     </main>
 
-    <!-- SCRIPTS -->
     <script src="js/assets.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/socket.js"></script>
