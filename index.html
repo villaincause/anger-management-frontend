@@ -20,8 +20,8 @@
                 </div>
                 <div id="loggedInViewWrapper">
                     <div id="logged-in-view" class="user-stats hidden">
-                        <span id="display-username">Player Name</span>
-                        <span id="display-record">Record: 0W - 0L</span>
+                        <span id="display-username" class="username-text">Player Name</span>
+                        <span id="display-record" class="record-text">Record: 0W - 0L</span>
                         <button id="btn-logout" class="text-link">Logout</button>
                     </div>
                 </div>
@@ -54,7 +54,7 @@
                     </div>
                 </div>
 
-                <p id="home-notification" class="notif-text hidden">Notification text goes here</p>
+                <p id="home-notification" class="notif-text hidden"></p>
             </div>
         </section>
 
@@ -82,24 +82,36 @@
                 <div class="fighter-side left">
                     <h3 class="state-label">Your State</h3>
                     <div class="stats-container">
-                        <div class="progress-container"><div id="p1-anger" class="progress-bar anger" style="width: 50%;"></div></div>
-                        <div class="progress-container"><div id="p1-satisfaction" class="progress-bar satisfaction" style="width: 25%;"></div></div>
-                        <div class="progress-container"><div id="p1-confidence" class="progress-bar confidence" style="width: 0%;"></div></div>
+                        <div class="progress-container">
+                            <div id="p1-anger" class="progress-bar anger" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div id="p1-satisfaction" class="progress-bar satisfaction" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div id="p1-confidence" class="progress-bar confidence" style="width: 0%;"></div>
+                        </div>
                     </div>
                     <div class="hand-wrapper">
-                        <img id="p1-hand-visual" src="" alt="P1 Hand">
+                        <img id="p1-hand-visual" src="" alt="Player Hand">
                     </div>
                 </div>
 
                 <div class="fighter-side right">
                     <h3 class="state-label">Opponent</h3>
                     <div class="stats-container">
-                        <div class="progress-container"><div id="p2-anger" class="progress-bar anger" style="width: 50%;"></div></div>
-                        <div class="progress-container"><div id="p2-satisfaction" class="progress-bar satisfaction" style="width: 25%;"></div></div>
-                        <div class="progress-container"><div id="p2-confidence" class="progress-bar confidence" style="width: 0%;"></div></div>
+                        <div class="progress-container">
+                            <div id="p2-anger" class="progress-bar anger" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div id="p2-satisfaction" class="progress-bar satisfaction" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div id="p2-confidence" class="progress-bar confidence" style="width: 0%;"></div>
+                        </div>
                     </div>
                     <div class="hand-wrapper">
-                        <img id="p2-hand-visual" src="" alt="P2 Hand">
+                        <img id="p2-hand-visual" src="" alt="Opponent Hand">
                     </div>
                 </div>
             </div>
@@ -108,15 +120,27 @@
                 <div id="announcer-text" class="announcer">WAITING FOR MOVE...</div>
 
                 <div id="rps-controls" class="control-group">
-                    <button id="btn-rock" class="move-btn"><img src="" alt="Rock"></button>
-                    <button id="btn-paper" class="move-btn"><img src="" alt="Paper"></button>
-                    <button id="btn-scissors" class="move-btn"><img src="" alt="Scissors"></button>
+                    <button id="btn-rock" class="move-btn" title="Rock">
+                        <img src="" alt="Rock">
+                    </button>
+                    <button id="btn-paper" class="move-btn" title="Paper">
+                        <img src="" alt="Paper">
+                    </button>
+                    <button id="btn-scissors" class="move-btn" title="Scissors">
+                        <img src="" alt="Scissors">
+                    </button>
                 </div>
 
                 <div id="action-controls" class="control-group hidden">
-                    <button id="btn-punch" class="action-btn"><img src="" alt="Punch"></button>
-                    <button id="btn-kick" class="action-btn"><img src="" alt="Kick"></button>
-                    <button id="btn-slap" class="action-btn"><img src="" alt="Slap"></button>
+                    <button id="btn-punch" class="action-btn" title="Punch">
+                        <img src="" alt="Punch">
+                    </button>
+                    <button id="btn-kick" class="action-btn" title="Kick">
+                        <img src="" alt="Kick">
+                    </button>
+                    <button id="btn-slap" class="action-btn" title="Slap">
+                        <img src="" alt="Slap">
+                    </button>
                 </div>
                 
                 <button id="btn-give-up" class="secondary-btn">Give Up</button>
@@ -148,8 +172,10 @@
                             <option value="female">Female</option>
                             <option value="other">Other</option>
                         </select>
-                        <label>Date of Birth</label>
-                        <input type="date" id="reg-dob" required>
+                        <div class="input-group">
+                            <label for="reg-dob">Date of Birth</label>
+                            <input type="date" id="reg-dob" required>
+                        </div>
                         <button type="submit" class="menu-btn">Sign Up</button>
                     </form>
                     <p>Already have an account? <a href="#" id="link-to-login">Login here</a></p>

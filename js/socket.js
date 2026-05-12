@@ -4,14 +4,14 @@
 
 let socket;
 let currentGameId = null;
-let myRole = 'p1'; // Default to p1; updated by server on GAME_STARTED or SESSION_VALID
+let myRole = 'p1'; 
+let uiTransitionTimeout = null; // Track timeouts to prevent overlapping UI resets
 
 /**
  * FAILSAFE: Retrieves the Game ID from memory or storage
  */
 function getActiveGameId() {
     if (currentGameId) return currentGameId;
-    
     const saved = localStorage.getItem('fightingGameState');
     if (saved) {
         try {
@@ -35,11 +35,8 @@ function initSocket() {
 
     socket.onopen = () => {
         console.log('Connected to Anger Management Server');
-        
         const storedId = getActiveGameId();
-        if (storedId) {
-            sendToServer('VERIFY_SESSION', { gameId: storedId });
-        }
+        if (storedId) sendToServer('VERIFY_SESSION', { gameId: storedId });
 
         const savedUser = localStorage.getItem('rps_user_session');
         if (savedUser) {
@@ -60,10 +57,17 @@ function initSocket() {
 function handleServerMessage(data) {
     const { type, payload } = data;
 
+    // Clear any pending UI resets when a new major message arrives
+    if (uiTransitionTimeout) {
+        clearTimeout(uiTransitionTimeout);
+        uiTransitionTimeout = null;
+    }
+
     switch (type) {
         case 'SESSION_INVALID':
             localStorage.removeItem('fightingGameState');
             currentGameId = null;
+            if (typeof stopBackgroundMusic === 'function') stopBackgroundMusic();
             if (typeof resetUI === 'function') resetUI();
             if (typeof showView === 'function') showView('home');
             break;
@@ -92,18 +96,15 @@ function handleServerMessage(data) {
             break;
 
         case 'WAITING_FOR_OPPONENT':
-            // Show the matchmaking overlay when server acknowledges queue entry
             showMatchmaking();
             if (typeof updateAnnouncer === 'function') {
-                updateAnnouncer("SEARCHING FOR OPPONENT...");
+                updateAnnouncer("WAITING FOR OPPONENT...");
             }
             if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
             break;
 
         case 'GAME_STARTED':
-            // Hide the matchmaking overlay as the match is ready
             hideMatchmaking();
-            
             currentGameId = payload.id;
             myRole = payload.yourRole || 'p1'; 
             saveGameIdToStorage(payload.id);
@@ -118,7 +119,8 @@ function handleServerMessage(data) {
 
             if (typeof updateScores === 'function') updateScores(pSelf.score, pOpp.score);
             if (typeof updateAllBars === 'function') updateAllBars(pSelf.stats, pOpp.stats);
-            if (typeof updateAnnouncer === 'function') updateAnnouncer("MATCH STARTED!");
+            
+            if (typeof updateAnnouncer === 'function') updateAnnouncer("MATCH STARTED! CHOOSE YOUR MOVE");
             break;
 
         case 'ROUND_RESULT':
@@ -133,68 +135,92 @@ function handleServerMessage(data) {
             let resultMsg = isDraw ? "DRAW!" : (amIWinner ? "YOU WON THE CLASH!" : "OPPONENT WON THE CLASH!");
             if (typeof updateAnnouncer === 'function') updateAnnouncer(resultMsg);
 
-            setTimeout(() => {
+            // FASTER TRANSITION: Reduced from 2000ms to 1200ms
+            uiTransitionTimeout = setTimeout(() => {
+                if (!currentGameId) return;
+
                 if (isDraw) {
-                    resetRPSUI();
+                    resetRPSUI(); 
                 } else if (amIWinner) {
                     if (typeof toggleActionPhase === 'function') toggleActionPhase(true);
+                    if (typeof updateAnnouncer === 'function') updateAnnouncer("CHOOSE YOUR ATTACK!");
                 } else {
                     if (typeof toggleActionPhase === 'function') {
                         toggleActionPhase(false); 
                         updateAnnouncer("OPPONENT IS ATTACKING...");
                     }
                 }
-            }, 1200);
+            }, 1200); 
             break;
 
         case 'UPDATE_UI':
-            const statsSelf = myRole === 'p1' ? payload.p1Stats : payload.p2Stats;
-            const statsOpp = myRole === 'p1' ? payload.p2Stats : payload.p1Stats;
-            const scoreSelf = myRole === 'p1' ? payload.p1Score : payload.p2Score;
-            const scoreOpp = myRole === 'p1' ? payload.p2Score : payload.p1Score;
+            const statsS = myRole === 'p1' ? payload.p1Stats : payload.p2Stats;
+            const statsO = myRole === 'p1' ? payload.p2Stats : payload.p1Stats;
+            const scoreS = myRole === 'p1' ? payload.p1Score : payload.p2Score;
+            const scoreO = myRole === 'p1' ? payload.p2Score : payload.p1Score;
 
-            if (typeof updateScores === 'function') updateScores(scoreSelf, scoreOpp);
-            if (statsSelf) updatePlayerBars('p1', statsSelf);
-            if (statsOpp) updatePlayerBars('p2', statsOpp);
+            if (typeof updateScores === 'function') updateScores(scoreS, scoreO);
+            if (statsS) updatePlayerBars('p1', statsS);
+            if (statsO) updatePlayerBars('p2', statsO);
             
+            let actionText = "";
             if (payload.cpuAction && typeof showActionEffect === 'function') {
                 showActionEffect('p2', payload.cpuAction);
+                if (typeof playActionSound === 'function') playActionSound(payload.cpuAction);
+                actionText = `OPPONENT USED ${payload.cpuAction.toUpperCase()}!`;
             } 
             else if (payload.onlineAction && typeof showActionEffect === 'function') {
                 const actorSide = (payload.actorRole === myRole) ? 'p1' : 'p2';
                 showActionEffect(actorSide, payload.onlineAction);
+                if (typeof playActionSound === 'function') playActionSound(payload.onlineAction);
+                const actorName = (payload.actorRole === myRole) ? "YOU" : "OPPONENT";
+                actionText = `${actorName} USED ${payload.onlineAction.toUpperCase()}!`;
+            }
+
+            if (actionText && typeof updateAnnouncer === 'function') {
+                updateAnnouncer(actionText);
             }
             
-            setTimeout(() => resetRPSUI(), 1500);
+            // Wait for the attack result before going back to RPS phase
+            uiTransitionTimeout = setTimeout(() => {
+                if (currentGameId) resetRPSUI();
+            }, 2500);
+            break;
+
+        case 'UPDATE_STATS':
+            const storedSession = localStorage.getItem('rps_user_session');
+            if (storedSession && typeof updateAuthUI === 'function') {
+                const user = JSON.parse(storedSession);
+                const updatedUser = { ...user, ...payload };
+                updateAuthUI(updatedUser); 
+            }
             break;
 
         case 'GAME_OVER':
-            if (typeof updateAnnouncer === 'function') updateAnnouncer("GAME OVER!");
-            
-            const myUserId = getUserId();
-            let winText = "OPPONENT WINS!";
+            let winText = "GAME OVER";
+            const reason = payload.reason;
 
-            if (payload.winnerId && myUserId && payload.winnerId === myUserId) {
-                winText = "YOU WIN!";
-            } 
-            else if (payload.reason && payload.reason.includes(myRole) && !payload.reason.includes('giveup')) {
-                winText = "YOU WIN!";
+            if (reason === 'p1_forfeit') {
+                winText = (myRole === 'p1') ? "YOU GAVE UP! OPPONENT WINS!" : "OPPONENT GAVE UP! YOU WIN!";
+            } else if (reason === 'p2_forfeit') {
+                winText = (myRole === 'p2') ? "YOU GAVE UP! OPPONENT WINS!" : "OPPONENT GAVE UP! YOU WIN!";
+            } else if (reason === 'p1_win') {
+                winText = (myRole === 'p2') ? "VICTORY!" : "DEFEAT!";
             }
-            else if (payload.reason === 'opponent_giveup') {
-                winText = "YOU WIN!";
-            }
+
+            currentGameId = null; 
+            if (typeof updateAnnouncer === 'function') updateAnnouncer(winText);
 
             setTimeout(() => {
                 alert(winText);
                 localStorage.removeItem('fightingGameState'); 
-                currentGameId = null;
-                if (payload.updatedUser && typeof updateAuthUI === 'function') updateAuthUI(payload.updatedUser);
+                if (typeof stopBackgroundMusic === 'function') stopBackgroundMusic();
                 if (typeof showView === 'function') showView('home');
-            }, 500);
+            }, 1200);
             break;
             
         case 'ERROR':
-            hideMatchmaking(); // Close overlay if an error occurs
+            hideMatchmaking();
             if (typeof showNotification === 'function') showNotification(payload.message);
             break;
     }
@@ -241,20 +267,13 @@ function submitAction(action) {
 
 function giveUp() {
     const id = getActiveGameId();
-    if (id) {
-        sendToServer('GIVE_UP', { gameId: id, userId: getUserId() });
-    }
-    localStorage.removeItem('fightingGameState');
-    currentGameId = null;
-    if (typeof showView === 'function') showView('home');
+    if (id) sendToServer('GIVE_UP', { gameId: id, userId: getUserId() });
 }
 
-/**
- * NEW: Handle leaving the matchmaking queue
- */
 function leaveQueue() {
     sendToServer('LEAVE_QUEUE', { userId: getUserId() });
     hideMatchmaking();
+    if (typeof stopBackgroundMusic === 'function') stopBackgroundMusic();
     if (typeof showView === 'function') showView('home');
 }
 
@@ -283,6 +302,7 @@ function getUserId() {
 }
 
 function resetRPSUI() {
+    if (!currentGameId) return;
     if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
     if (typeof updateAnnouncer === 'function') updateAnnouncer("CHOOSE YOUR MOVE");
 }

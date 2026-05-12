@@ -28,7 +28,7 @@ const btnBackMenu = document.getElementById('btn-back-menu');
 const inputRoomCode = document.getElementById('input-room-code');
 const roomCodeDisplay = document.getElementById('room-code-display');
 
-// NEW: Matchmaking Overlay Selectors
+// Matchmaking Overlay Selectors
 const matchmakingOverlay = document.getElementById('matchmaking-overlay');
 const btnCancelQueue = document.getElementById('btn-cancel-queue');
 
@@ -39,6 +39,43 @@ const linkToLogin = document.getElementById('link-to-login');
 
 let currentUser = null; 
 
+// --- AUDIO SYSTEM ---
+let bgMusic = null;
+
+/**
+ * Starts the background music. Triggered by user interaction (button clicks).
+ */
+function playBackgroundMusic() {
+    if (!bgMusic) {
+        bgMusic = new Audio(GAME_ASSETS.sounds.bgMusic);
+        bgMusic.loop = true;
+        bgMusic.volume = 0.1; // 10% volume
+    }
+    bgMusic.play().catch(err => console.warn("Audio playback delayed until interaction:", err));
+}
+
+/**
+ * Stops background music and resets it to the beginning.
+ */
+function stopBackgroundMusic() {
+    if (bgMusic) {
+        bgMusic.pause();
+        bgMusic.currentTime = 0;
+    }
+}
+
+/**
+ * Plays a specific action sound (Punch, Kick, Slap).
+ */
+function playActionSound(action) {
+    const soundUrl = GAME_ASSETS.sounds[action.toLowerCase()];
+    if (soundUrl) {
+        const sfx = new Audio(soundUrl);
+        sfx.volume = 0.3;
+        sfx.play();
+    }
+}
+
 // 2. View Switching Logic
 function showView(viewName) {
     if (!homeScreen || !gameScreen) return;
@@ -47,6 +84,7 @@ function showView(viewName) {
 
     if (viewName === 'home') {
         homeScreen.classList.remove('hidden');
+        stopBackgroundMusic(); // Stop music when returning to menu
         
         // Reset Friend Menu state
         if (friendOptions) friendOptions.classList.add('hidden');
@@ -63,7 +101,7 @@ function showView(viewName) {
     }
 }
 
-// 3. Auth UI Updates
+// 3. Auth UI & Record Updates
 function updateAuthUI(user) {
     if (user) {
         currentUser = user;
@@ -72,7 +110,11 @@ function updateAuthUI(user) {
         if (loggedOutView) loggedOutView.classList.add('hidden');
         if (loggedInView) loggedInView.classList.remove('hidden');
         if (displayUsername) displayUsername.innerText = user.username;
-        if (displayRecord) displayRecord.innerText = `Record: ${user.wins}W - ${user.losses}L`;
+        
+        const w = user.wins || 0;
+        const l = user.losses || 0;
+        if (displayRecord) displayRecord.innerText = `Record: ${w}W - ${l}L`;
+        
         if (authModal) authModal.classList.add('hidden');
     } else {
         currentUser = null;
@@ -80,6 +122,15 @@ function updateAuthUI(user) {
 
         if (loggedOutView) loggedOutView.classList.remove('hidden');
         if (loggedInView) loggedInView.classList.add('hidden');
+    }
+}
+
+function updateLiveRecord(wins, losses) {
+    if (currentUser) {
+        currentUser.wins = wins;
+        currentUser.losses = losses;
+        localStorage.setItem('rps_user_session', JSON.stringify(currentUser));
+        if (displayRecord) displayRecord.innerText = `Record: ${wins}W - ${losses}L`;
     }
 }
 
@@ -115,6 +166,7 @@ if (btnBackMenu) {
 // GAME INITIATION
 if (btnLocal) {
     btnLocal.addEventListener('click', () => {
+        playBackgroundMusic(); // Start music on click
         const name = currentUser ? currentUser.username : "Guest";
         initGame('local', name);
     });
@@ -125,6 +177,7 @@ if (btnOnline) {
         if (!currentUser) {
             showNotification("Please Login to play Online");
         } else {
+            playBackgroundMusic(); // Start music on click
             initGame('online', currentUser.username);
         }
     });
@@ -133,6 +186,7 @@ if (btnOnline) {
 if (btnCreateRoom) {
     btnCreateRoom.addEventListener('click', () => {
         if (typeof requestStartGame === "function") {
+            playBackgroundMusic(); // Start music on click
             btnCreateRoom.classList.add('hidden');
             requestStartGame('friend', currentUser.username, currentUser.id, null, 'create');
         }
@@ -144,6 +198,7 @@ if (btnJoinRoom) {
         const code = inputRoomCode.value.trim();
         if (code.length === 4) {
             if (typeof requestStartGame === "function") {
+                playBackgroundMusic(); // Start music on click
                 requestStartGame('friend', currentUser.username, currentUser.id, code, 'join');
             }
         } else {
@@ -152,7 +207,7 @@ if (btnJoinRoom) {
     });
 }
 
-// NEW: Matchmaking Cancel Listener
+// Matchmaking Cancel Listener
 if (btnCancelQueue) {
     btnCancelQueue.addEventListener('click', () => {
         if (typeof leaveQueue === 'function') {
@@ -234,10 +289,8 @@ function initGame(mode, username) {
         requestStartGame(mode, username, userId);
     }
 
-    // Switch to game screen
     showView('game');
 
-    // If online mode, specifically trigger the visual matchmaking overlay
     if (mode === 'online') {
         if (typeof showMatchmaking === 'function') {
             showMatchmaking();
@@ -271,6 +324,9 @@ function initControls() {
 
 // BOOTSTRAP LOGIC
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Initiate Asset Preloading
+    if (typeof preloadAssets === "function") preloadAssets();
+    
     if (typeof initSelectors === "function") initSelectors();
     if (typeof initSocket === "function") initSocket();
     initControls();
@@ -297,7 +353,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (hasActiveGame) {
         showView('game');
+        playBackgroundMusic(); // Resume music if game is active
     } else {
         showView('home'); 
     }
 });
+
+// Global exports for socket.js
+window.playBackgroundMusic = playBackgroundMusic;
+window.stopBackgroundMusic = stopBackgroundMusic;
+window.playActionSound = playActionSound;
