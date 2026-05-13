@@ -143,7 +143,7 @@ function showActionEffect(victim, action) {
 }
 
 /**
- * Standard bar updater
+ * Standard bar updater - Purely visual width adjustment
  * @param {string} playerPrefix - 'p1' or 'p2'
  */
 function updateBar(playerPrefix, type, value) {
@@ -234,8 +234,6 @@ function toggleActionPhase(show) {
     } else {
         rpsControls.classList.remove('hidden');
         actionControls.classList.add('hidden');
-        // Note: handleServerMessage in socket.js will override this text 
-        // if the player is actually waiting for an opponent's turn.
         updateAnnouncer("CHOOSE YOUR MOVE"); 
     }
     
@@ -244,8 +242,6 @@ function toggleActionPhase(show) {
 
 /**
  * Updates all bars for a player at once
- * @param {string} playerPrefix - 'p1' or 'p2'
- * @param {object} stats - {anger, satisfaction, confidence}
  */
 function updateAllBars(p1StatsIn, p2StatsIn) {
     if (!p1StatsIn || !p2StatsIn) return;
