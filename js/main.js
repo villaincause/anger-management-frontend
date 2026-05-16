@@ -39,40 +39,16 @@ const linkToLogin = document.getElementById('link-to-login');
 
 let currentUser = null; 
 
-// --- AUDIO SYSTEM ---
-let bgMusic = null;
-
-/**
- * Starts the background music. Triggered by user interaction (button clicks).
- */
-function playBackgroundMusic() {
-    if (!bgMusic) {
-        bgMusic = new Audio(GAME_ASSETS.sounds.bgMusic);
-        bgMusic.loop = true;
-        bgMusic.volume = 0.1; // 10% volume
-    }
-    bgMusic.play().catch(err => console.warn("Audio playback delayed until interaction:", err));
-}
-
-/**
- * Stops background music and resets it to the beginning.
- */
-function stopBackgroundMusic() {
-    if (bgMusic) {
-        bgMusic.pause();
-        bgMusic.currentTime = 0;
-    }
-}
-
 /**
  * Plays a specific action sound (Punch, Kick, Slap).
+ * Background music is fully managed by AudioManager in socket.js.
  */
 function playActionSound(action) {
     const soundUrl = GAME_ASSETS.sounds[action.toLowerCase()];
     if (soundUrl) {
         const sfx = new Audio(soundUrl);
         sfx.volume = 0.3;
-        sfx.play();
+        sfx.play().catch(() => {});
     }
 }
 
@@ -84,8 +60,7 @@ function showView(viewName) {
 
     if (viewName === 'home') {
         homeScreen.classList.remove('hidden');
-        stopBackgroundMusic(); // Stop music when returning to menu
-        
+
         // Reset Friend Menu state
         if (friendOptions) friendOptions.classList.add('hidden');
         if (roomCodeDisplay) roomCodeDisplay.classList.add('hidden');
@@ -164,9 +139,10 @@ if (btnBackMenu) {
 }
 
 // GAME INITIATION
+// Note: no audio calls here — AudioManager in socket.js handles all music
+// transitions via GAME_STARTED / GAME_OVER / SESSION_VALID server messages.
 if (btnLocal) {
     btnLocal.addEventListener('click', () => {
-        playBackgroundMusic(); // Start music on click
         const name = currentUser ? currentUser.username : "Guest";
         initGame('local', name);
     });
@@ -177,7 +153,6 @@ if (btnOnline) {
         if (!currentUser) {
             showNotification("Please Login to play Online");
         } else {
-            playBackgroundMusic(); // Start music on click
             initGame('online', currentUser.username);
         }
     });
@@ -186,7 +161,6 @@ if (btnOnline) {
 if (btnCreateRoom) {
     btnCreateRoom.addEventListener('click', () => {
         if (typeof requestStartGame === "function") {
-            playBackgroundMusic(); // Start music on click
             btnCreateRoom.classList.add('hidden');
             requestStartGame('friend', currentUser.username, currentUser.id, null, 'create');
         }
@@ -198,7 +172,6 @@ if (btnJoinRoom) {
         const code = inputRoomCode.value.trim();
         if (code.length === 4) {
             if (typeof requestStartGame === "function") {
-                playBackgroundMusic(); // Start music on click
                 requestStartGame('friend', currentUser.username, currentUser.id, code, 'join');
             }
         } else {
@@ -328,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof preloadAssets === "function") preloadAssets();
     
     if (typeof initSelectors === "function") initSelectors();
-    if (typeof initSocket === "function") initSocket();
+    if (typeof initSocket === "function") initSocket(); // AudioManager.playHomeMusic() fires inside here on socket open
     initControls();
 
     const savedUser = localStorage.getItem('rps_user_session');
@@ -351,15 +324,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // showView just toggles DOM visibility.
+    // Music is handled entirely by AudioManager via socket events.
     if (hasActiveGame) {
         showView('game');
-        playBackgroundMusic(); // Resume music if game is active
     } else {
         showView('home'); 
     }
 });
 
-// Global exports for socket.js
-window.playBackgroundMusic = playBackgroundMusic;
-window.stopBackgroundMusic = stopBackgroundMusic;
+// Global export for ui.js / socket.js
 window.playActionSound = playActionSound;

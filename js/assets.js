@@ -29,9 +29,12 @@ const GAME_ASSETS = {
     // Audio assets for music and combat
     sounds: {
         bgMusic: "https://res.cloudinary.com/dorpdfe8d/video/upload/v1778617089/BackgroundMusic.mp3",
+        bgMusicGame: "https://res.cloudinary.com/dorpdfe8d/video/upload/v1778701719/BackgroundMusicInGame.mp3",
         kick: "https://res.cloudinary.com/dorpdfe8d/video/upload/v1778617112/Kick.mp3",
         punch: "https://res.cloudinary.com/dorpdfe8d/video/upload/v1778617113/Punch.mp3",
-        slap: "https://res.cloudinary.com/dorpdfe8d/video/upload/v1778617114/Slap.mp3"
+        slap: "https://res.cloudinary.com/dorpdfe8d/video/upload/v1778617114/Slap.mp3",
+        victory: "https://res.cloudinary.com/dorpdfe8d/video/upload/v1778700327/Victory.mp3",
+        loss: "https://res.cloudinary.com/dorpdfe8d/video/upload/v1778700325/Loss.mp3"
     }
 };
 
@@ -39,7 +42,6 @@ const GAME_ASSETS = {
  * Preloads all images and audio to avoid delay during gameplay
  */
 function preloadAssets() {
-    // 1. Preload Images
     const imageUrls = [
         ...Object.values(GAME_ASSETS.hands),
         ...Object.values(GAME_ASSETS.moves),
@@ -52,7 +54,6 @@ function preloadAssets() {
         img.src = url;
     });
 
-    // 2. Preload Audio
     const audioUrls = Object.values(GAME_ASSETS.sounds);
     audioUrls.forEach(url => {
         const audio = new Audio();
@@ -63,7 +64,6 @@ function preloadAssets() {
     console.log("Image and Audio assets preloading initiated...");
 }
 
-// Make it available for both Frontend (window) and Backend (module.exports)
 if (typeof window !== 'undefined') {
     window.GAME_ASSETS = GAME_ASSETS;
     window.preloadAssets = preloadAssets;
