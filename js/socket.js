@@ -1,5 +1,5 @@
 /**
- * socket.js - The Frontend Communicator
+ * socket.js - The Frontend Communicator with Pacing Protection
  */
 
 let socket;
@@ -7,123 +7,122 @@ let currentGameId = null;
 let myRole = 'p1'; 
 let uiTransitionTimeout = null; // Track timeouts to prevent overlapping UI resets
 
+// ── PACING & TIMING ENGINES ─────────────────
+let messageQueue = [];
+let isProcessingQueue = false;
+let lastMoveSubmitTime = 0;
+
 // ─────────────────────────────────────────────
 //  AUDIO MANAGER
 // ─────────────────────────────────────────────
 
 const AudioManager = (() => {
-    let bgTrack = null;       // Currently playing background track
-    let activeSrc = null;     // URL of the current background track
+    const tracks = {
+        home: null,
+        game: null,
+    };
+    let unlocked    = false;   
+    let pendingPlay = null;    
+    let activeKey   = null;    
 
-    /**
-     * Internal: starts looping a background track.
-     * No-ops if the same URL is already playing.
-     */
-    function _playBg(url) {
-        if (activeSrc === url && bgTrack && !bgTrack.paused) return; // already playing
+    function _buildTracks() {
+        const s = window.GAME_ASSETS?.sounds;
+        if (!s) return false;
+        if (!tracks.home) {
+            tracks.home = new Audio(s.bgMusic);
+            tracks.home.loop   = true;
+            tracks.home.volume = 0.3;
+        }
+        if (!tracks.game) {
+            tracks.game = new Audio(s.bgMusicGame);
+            tracks.game.loop   = true;
+            tracks.game.volume = 0.3;
+        }
+        return true;
+    }
 
-        // Stop whatever is currently playing
-        _stopBg();
+    function _kill(key) {
+        const node = tracks[key];
+        if (!node) return;
+        const savedSrc = node.src;   
+        node.volume       = 0;
+        node.pause();
+        node.src          = '';      
+        node.load();               
+        node.src          = savedSrc; 
+        node.volume       = 0.3;
+        node.currentTime  = 0;
+    }
 
-        bgTrack  = new Audio(url);
-        activeSrc = url;
-        bgTrack.loop   = true;
-        bgTrack.volume = 0.3;
+    function _switchTo(key) {
+        if (!_buildTracks()) {
+            pendingPlay = key;
+            return;
+        }
 
-        // Browsers block autoplay without a prior user gesture.
-        // We queue a retry on the first user interaction if needed.
-        const playPromise = bgTrack.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(() => {
-                const retry = () => {
-                    bgTrack && bgTrack.play().catch(() => {});
-                    document.removeEventListener('click',      retry);
-                    document.removeEventListener('keydown',    retry);
-                    document.removeEventListener('touchstart', retry);
-                };
-                document.addEventListener('click',      retry, { once: true });
-                document.addEventListener('keydown',    retry, { once: true });
-                document.addEventListener('touchstart', retry, { once: true });
-            });
+        activeKey = key;
+        const wanted    = tracks[key];
+        const otherKey  = key === 'home' ? 'game' : 'home';
+
+        _kill(otherKey);
+
+        if (unlocked) {
+            wanted.play().catch(() => {});
+        } else {
+            pendingPlay = key;
         }
     }
 
-    function _stopBg() {
-        if (bgTrack) {
-            bgTrack.pause();
-            bgTrack.currentTime = 0;
-            bgTrack  = null;
-            activeSrc = null;
+    function _unlock() {
+        if (unlocked) return;
+        unlocked = true;
+
+        const key = pendingPlay ?? activeKey ?? 'home';
+        pendingPlay = null;
+
+        const other = key === 'home' ? 'game' : 'home';
+        _kill(other);
+
+        if (tracks[key]) {
+            tracks[key].play().catch(() => {});
         }
     }
 
-    /**
-     * Play a one-shot sound effect (does not interrupt background music).
-     */
-    function _playSfx(url) {
-        if (!url) return;
-        const sfx = new Audio(url);
-        sfx.volume = 0.5;
-        sfx.play().catch(() => {});
-    }
+    document.addEventListener('click',      _unlock, { capture: true, once: true });
+    document.addEventListener('keydown',    _unlock, { capture: true, once: true });
+    document.addEventListener('touchstart', _unlock, { capture: true, once: true });
 
-    // ── Public API ──────────────────────────────
+    return {
+        playHomeMusic: () => _switchTo('home'),
+        playGameMusic: () => _switchTo('game'),
+        playEndSequence: (didWin) => {
+            _kill('game');
+            _kill('home');
+            activeKey = null;
 
-    /** Call once the home screen is shown. */
-    function playHomeMusic() {
-        const url = window.GAME_ASSETS?.sounds?.bgMusic;
-        if (url) _playBg(url);
-    }
+            const sfxUrl = didWin
+                ? window.GAME_ASSETS?.sounds?.victory
+                : window.GAME_ASSETS?.sounds?.loss;
 
-    /** Call when a game match starts. */
-    function playGameMusic() {
-        const url = window.GAME_ASSETS?.sounds?.bgMusicGame;
-        if (url) _playBg(url);
-    }
+            if (sfxUrl) {
+                const sfx = new Audio(sfxUrl);
+                sfx.volume = 0.5;
+                sfx.play().catch(() => {});
+            }
 
-    /**
-     * Call at the end of a game.
-     * Plays the victory or loss one-shot, stops the game loop,
-     * then (after a short delay) restarts home music.
-     * @param {boolean} didWin
-     */
-    function playEndSequence(didWin) {
-        _stopBg();
-
-        const sfxUrl = didWin
-            ? window.GAME_ASSETS?.sounds?.victory
-            : window.GAME_ASSETS?.sounds?.loss;
-
-        _playSfx(sfxUrl);
-
-        // Return to home music after the SFX has had time to play (~3 s)
-        setTimeout(() => {
-            playHomeMusic();
-        }, 3000);
-    }
-
-    /** Hard-stop everything (e.g. session invalid / user navigates away). */
-    function stopAll() {
-        _stopBg();
-    }
-
-    return { playHomeMusic, playGameMusic, playEndSequence, stopAll };
+            setTimeout(() => _switchTo('home'), 3000);
+        },
+        stopAll: () => _kill('home') || _kill('game') || (activeKey = null)
+    };
 })();
 
-// Expose globally so ui.js / other scripts can call it
 window.AudioManager = AudioManager;
-
-// Keep the legacy function name working if anything else calls it
 function stopBackgroundMusic() { AudioManager.stopAll(); }
-
 
 // ─────────────────────────────────────────────
 //  HELPERS
 // ─────────────────────────────────────────────
 
-/**
- * FAILSAFE: Retrieves the Game ID from memory or storage
- */
 function getActiveGameId() {
     if (currentGameId) return currentGameId;
     const saved = localStorage.getItem('fightingGameState');
@@ -154,10 +153,7 @@ function sendToServer(type, payload) {
     }
 }
 
-function sendAuthRequest(mode, data) {
-    sendToServer(mode, data);
-}
-
+function sendAuthRequest(mode, data) { sendToServer(mode, data); }
 function requestStartGame(mode, username, userId = null, roomCode = null, action = null) {
     sendToServer('START_GAME', { mode, username, userId, roomCode, action });
 }
@@ -166,6 +162,8 @@ function submitMove(move) {
     const id = getActiveGameId();
     if (!id) return;
     if (typeof updateAnnouncer === 'function') updateAnnouncer("WAITING FOR OPPONENT...");
+    
+    lastMoveSubmitTime = Date.now(); 
     sendToServer('SUBMIT_MOVE', { gameId: id, move, userId: getUserId() });
 }
 
@@ -189,24 +187,13 @@ function leaveQueue() {
     AudioManager.playHomeMusic();
 }
 
-function showMatchmaking() {
-    const overlay = document.getElementById('matchmaking-overlay');
-    if (overlay) overlay.classList.remove('hidden');
-}
-
-function hideMatchmaking() {
-    const overlay = document.getElementById('matchmaking-overlay');
-    if (overlay) overlay.classList.add('hidden');
-}
+function showMatchmaking() { document.getElementById('matchmaking-overlay')?.classList.remove('hidden'); }
+function hideMatchmaking() { document.getElementById('matchmaking-overlay')?.classList.add('hidden'); }
 
 function getUserId() {
     const user = localStorage.getItem('rps_user_session');
     if (!user) return null;
-    try {
-        return JSON.parse(user).id;
-    } catch(e) {
-        return null;
-    }
+    try { return JSON.parse(user).id; } catch(e) { return null; }
 }
 
 function resetRPSUI() {
@@ -227,9 +214,8 @@ function updateAllBars(p1Stats, p2Stats) {
     updatePlayerBars('p2', p2Stats);
 }
 
-
 // ─────────────────────────────────────────────
-//  SOCKET
+//  SOCKET ENGINE WITH INTEGRATED PACKET PACING
 // ─────────────────────────────────────────────
 
 function initSocket() {
@@ -240,8 +226,6 @@ function initSocket() {
 
     socket.onopen = () => {
         console.log('Connected to Anger Management Server');
-
-        // Start home music as soon as the connection is live
         AudioManager.playHomeMusic();
 
         const storedId = getActiveGameId();
@@ -256,17 +240,67 @@ function initSocket() {
 
     socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        handleServerMessage(data);
+        messageQueue.push(data);
+        processNextMessage();
     };
     
     socket.onclose = () => console.warn('Disconnected from server.');
     socket.onerror = (error) => console.error('WebSocket Error:', error);
 }
 
+/**
+ * Sequential Pacing Queue Coordinator
+ */
+function processNextMessage() {
+    if (isProcessingQueue || messageQueue.length === 0) return;
+
+    isProcessingQueue = true;
+    const data = messageQueue.shift();
+    
+    if (data.type === 'SESSION_INVALID' || data.type === 'GAME_OVER') {
+        messageQueue = [];
+    }
+
+    let executionDelay = 0;
+
+    if (data.type === 'ROUND_RESULT') {
+        const timeElapsed = Date.now() - lastMoveSubmitTime;
+        const targetWaitingDuration = 800; // Snappier threshold (reduced from 1000)
+        if (timeElapsed < targetWaitingDuration) {
+            executionDelay = targetWaitingDuration - timeElapsed;
+        }
+    }
+
+    setTimeout(() => {
+        handleServerMessage(data);
+
+        let displayDuration = 0;
+        if (data.type === 'ROUND_RESULT') {
+            const amIOpponent = data.payload.result !== myRole && data.payload.result !== 'draw';
+            
+            if (amIOpponent) {
+                // Opponent won! Clash takes 1200ms + give "OPPONENT IS ATTACKING..." 800ms reading window
+                displayDuration = 2000; 
+            } else {
+                // Draw or Player won! Proceed quickly to selections
+                displayDuration = 1300; 
+            }
+        } else if (data.type === 'UPDATE_UI' && (data.payload.cpuAction || data.payload.onlineAction)) {
+            // Snappier action visibility window (Reduced from 1500ms to 1100ms)
+            displayDuration = 1100;
+        }
+
+        setTimeout(() => {
+            isProcessingQueue = false;
+            processNextMessage(); 
+        }, displayDuration);
+
+    }, executionDelay);
+}
+
 function handleServerMessage(data) {
     const { type, payload } = data;
 
-    // Clear any pending UI resets when a new major message arrives
     if (uiTransitionTimeout) {
         clearTimeout(uiTransitionTimeout);
         uiTransitionTimeout = null;
@@ -285,7 +319,6 @@ function handleServerMessage(data) {
         case 'SESSION_VALID':
             if (typeof showView === 'function') showView('game');
             if (payload.yourRole) myRole = payload.yourRole;
-            // Session is still in a live game — keep game music
             AudioManager.playGameMusic();
             break;
 
@@ -309,9 +342,7 @@ function handleServerMessage(data) {
 
         case 'WAITING_FOR_OPPONENT':
             showMatchmaking();
-            if (typeof updateAnnouncer === 'function') {
-                updateAnnouncer("WAITING FOR OPPONENT...");
-            }
+            if (typeof updateAnnouncer === 'function') updateAnnouncer("WAITING FOR OPPONENT...");
             if (typeof toggleActionPhase === 'function') toggleActionPhase(false);
             break;
 
@@ -325,8 +356,6 @@ function handleServerMessage(data) {
             document.getElementById('friend-room-options')?.classList.add('hidden');
 
             if (typeof showView === 'function') showView('game');
-
-            // Switch from home music → in-game music
             AudioManager.playGameMusic();
 
             const pSelf = myRole === 'p1' ? payload.p1 : payload.p2;
@@ -334,7 +363,6 @@ function handleServerMessage(data) {
 
             if (typeof updateScores === 'function') updateScores(pSelf.score, pOpp.score);
             if (typeof updateAllBars === 'function') updateAllBars(pSelf.stats, pOpp.stats);
-            
             if (typeof updateAnnouncer === 'function') updateAnnouncer("MATCH STARTED! CHOOSE YOUR MOVE");
             break;
 
@@ -356,13 +384,11 @@ function handleServerMessage(data) {
                 if (isDraw) {
                     resetRPSUI(); 
                 } else if (amIWinner) {
-                    // Switch to action phase manually for the winner
                     if (typeof toggleActionPhase === 'function') {
                         toggleActionPhase(true);
                         updateAnnouncer("PICK YOUR ATTACK!");
                     }
                 } else {
-                    // Loser waits for the opponent's action message from the server
                     if (typeof toggleActionPhase === 'function') {
                         toggleActionPhase(false); 
                         updateAnnouncer("OPPONENT IS ATTACKING...");
@@ -399,7 +425,6 @@ function handleServerMessage(data) {
                 updateAnnouncer(actionText);
             }
             
-            // Wait for action animation to play out before returning to RPS
             uiTransitionTimeout = setTimeout(() => {
                 const actionControls = document.getElementById('action-controls');
                 const isActionPhaseActive = actionControls && !actionControls.classList.contains('hidden');
@@ -407,7 +432,7 @@ function handleServerMessage(data) {
                 if (currentGameId && !isActionPhaseActive) {
                     resetRPSUI();
                 }
-            }, 2500);
+            }, 1700); // Faster turnaround to return back to RPS choices (Reduced from 2500ms)
             break;
 
         case 'UPDATE_STATS':
@@ -423,7 +448,6 @@ function handleServerMessage(data) {
             let winText = "GAME OVER";
             const reason = payload.reason;
             const winner = payload.winner;
-
             let didIWin = false;
 
             if (reason.includes('forfeit')) {
@@ -445,7 +469,6 @@ function handleServerMessage(data) {
 
             currentGameId = null; 
             if (typeof updateAnnouncer === 'function') updateAnnouncer(winText);
-
             AudioManager.playEndSequence(didIWin);
 
             setTimeout(() => {
