@@ -6,7 +6,7 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(74, 44, 42, 0.9); /* Matching game theme */
+    background-color: rgba(74, 44, 42, 0.9);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -44,7 +44,7 @@
 .modal-content form {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Precise spacing between inputs */
+    gap: 10px;
 }
 
 .modal-content input, 
@@ -54,7 +54,7 @@
     border: 2px solid #4A2C2A;
     border-radius: 10px;
     font-family: inherit;
-    box-sizing: border-box; /* Crucial for width calculation */
+    box-sizing: border-box;
 }
 
 .modal-content label {
@@ -63,13 +63,12 @@
     margin-top: 5px;
 }
 
-/* THE FIX: Override menu-btn when inside a modal */
 .modal-content .menu-btn {
-    width: 100% !important; /* Spans the form width */
-    padding: 12px !important; /* Smaller than main menu */
+    width: 100% !important;
+    padding: 12px !important;
     font-size: 1rem !important;
     margin-top: 15px;
-    box-shadow: 0 4px 0px #4A2C2A; /* Smaller shadow */
+    box-shadow: 0 4px 0px #4A2C2A;
 }
 
 .modal-content .menu-btn:active {
@@ -86,10 +85,58 @@
 .modal-content a {
     color: #4A2C2A;
     font-weight: bold;
-    text-decoration: none; /* Change 'underline' to 'none' */
+    text-decoration: none;
 }
 
-/* Optional: Add a hover effect so the user knows it's clickable */
 .modal-content a:hover {
     text-decoration: underline; 
+}
+
+/* =============================================
+   MOBILE RESPONSIVE — auth.css
+   max-width: 480px (portrait phones)
+   ============================================= */
+@media (max-width: 480px) {
+
+    .modal-content {
+        width: 92%;
+        padding: 22px 18px;
+        border-radius: 16px;
+        border-width: 3px;
+        box-shadow: 0 6px 0px rgba(0,0,0,0.1);
+    }
+
+    .modal-content h2 {
+        font-size: 1.15rem;
+        margin-bottom: 14px;
+    }
+
+    .modal-content input,
+    .modal-content select {
+        padding: 10px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+    }
+
+    .modal-content label {
+        font-size: 0.75rem;
+    }
+
+    .modal-content .menu-btn {
+        padding: 10px !important;
+        font-size: 0.9rem !important;
+        margin-top: 10px;
+        box-shadow: 0 3px 0px #4A2C2A;
+    }
+
+    .modal-content p {
+        font-size: 0.8rem;
+        margin-top: 10px;
+    }
+
+    .close-modal {
+        font-size: 22px;
+        top: 8px;
+        right: 12px;
+    }
 }

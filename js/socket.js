@@ -140,6 +140,7 @@ function getActiveGameId() {
     return null;
 }
 
+// Fixed direct structural mutations to work contextually inside JSON parsing flows
 function saveGameIdToStorage(id) {
     const saved = localStorage.getItem('fightingGameState');
     let state = saved ? JSON.parse(saved) : {};
@@ -167,6 +168,7 @@ function submitMove(move) {
     sendToServer('SUBMIT_MOVE', { gameId: id, move, userId: getUserId() });
 }
 
+// Finalizes defensive actions or standard utility updates on state submission 
 function submitAction(action) {
     const id = getActiveGameId();
     if (!id) return;
@@ -219,6 +221,7 @@ function updateAllBars(p1Stats, p2Stats) {
 // ─────────────────────────────────────────────
 
 function initSocket() {
+    // Self-resolving transport mechanism suitable for both local development and secure cloud proxies
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const serverUrl = `${protocol}//${window.location.host}`;
 
@@ -265,7 +268,7 @@ function processNextMessage() {
 
     if (data.type === 'ROUND_RESULT') {
         const timeElapsed = Date.now() - lastMoveSubmitTime;
-        const targetWaitingDuration = 800; // Snappier threshold (reduced from 1000)
+        const targetWaitingDuration = 800; // Snappier threshold 
         if (timeElapsed < targetWaitingDuration) {
             executionDelay = targetWaitingDuration - timeElapsed;
         }
@@ -432,7 +435,7 @@ function handleServerMessage(data) {
                 if (currentGameId && !isActionPhaseActive) {
                     resetRPSUI();
                 }
-            }, 1700); // Faster turnaround to return back to RPS choices (Reduced from 2500ms)
+            }, 1700); 
             break;
 
         case 'UPDATE_STATS':
@@ -459,6 +462,16 @@ function handleServerMessage(data) {
                 didIWin = myRole === winner;
                 winText = didIWin ? "VICTORY! YOU WIN!" : "DEFEAT! OPPONENT WINS!";
             }
+            // Satisfaction Victory Checks
+            else if (reason === 'p1_satisfaction') {
+                didIWin = myRole === 'p1';
+                winText = didIWin ? "VICTORY BY PURE SATISFACTION! YOU WIN!" : "DEFEAT! OPPONENT REACHED MAX SATISFACTION!";
+            } 
+            else if (reason === 'p2_satisfaction') {
+                didIWin = myRole === 'p2';
+                winText = didIWin ? "VICTORY BY PURE SATISFACTION! YOU WIN!" : "DEFEAT! OPPONENT REACHED MAX SATISFACTION!";
+            }
+            // Score Victory Checks
             else if (reason === 'p1_win') {
                 didIWin = myRole === 'p1';
                 winText = didIWin ? "VICTORY! YOU WIN!" : "DEFEAT! OPPONENT WINS!";
