@@ -7,10 +7,10 @@
 }
 
 body {
-    background-color: #FFF1D3; /* Your specified theme color */
+    background-color: #FFF1D3;
     color: #333;
     height: 100vh;
-    overflow: hidden; /* Prevents scrolling during battle animations */
+    overflow: hidden;
 }
 
 /* 2. SPA View Management */
@@ -31,7 +31,7 @@ body {
     font-weight: 900;
     letter-spacing: 2px;
     text-align: center;
-    color: #4A2C2A; /* A deep brown/maroon that looks great with cream/yellow */
+    color: #4A2C2A;
 }
 
 /* 4. Common UI Elements */
@@ -55,7 +55,7 @@ body {
     cursor: pointer;
 }
 
-/* 5. Progress Bar Globals (The Psychorithm Bars) */
+/* 5. Progress Bar Globals */
 .progress-container {
     width: 150px;
     height: 12px;
@@ -68,7 +68,7 @@ body {
 
 .progress-bar {
     height: 100%;
-    width: 0%; /* Controlled by ui.js */
+    width: 0%;
     transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -82,4 +82,19 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+/* =============================================
+   MOBILE RESPONSIVE — main.css
+   max-width: 480px (portrait phones)
+   ============================================= */
+@media (max-width: 480px) {
+    body {
+        overflow-y: auto; /* allow scroll on mobile if needed */
+    }
+
+    .progress-container {
+        width: 100%;
+        height: 8px;
+    }
 }

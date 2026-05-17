@@ -10,7 +10,7 @@
     overflow: hidden;
 }
 
-/* 2. Header (Top Right Stats & Auth Button) */
+/* 2. Header */
 .home-header {
     width: 100%;
     display: flex;
@@ -30,7 +30,6 @@
     box-shadow: 0 4px 15px rgba(74, 44, 42, 0.2);
 }
 
-/* Specific small button for the header */
 #btn-show-login {
     height: fit-content;
     width: auto;
@@ -57,7 +56,7 @@
     font-weight: 900;
 }
 
-/* 4. Menu Buttons (Main UI) */
+/* 4. Menu Buttons */
 .menu-options {
     display: flex;
     flex-direction: column;
@@ -132,7 +131,6 @@ form .menu-btn {
     line-height: 1;
 }
 
-/* Form Layout Fixes */
 .auth-form-container form {
     display: flex;
     flex-direction: column;
@@ -170,7 +168,6 @@ form .menu-btn {
     font-size: 1rem;
 }
 
-/* THE FIXED LOGIN/SUBMIT BUTTON */
 .btn-submit {
     margin-top: 20px;
     width: 100%;
@@ -202,7 +199,7 @@ form .menu-btn {
     background-color: #f1c40f; 
 }
 
-/* --- 7. Friend Room UI Elements --- */
+/* 7. Friend Room UI Elements */
 #friend-room-options {
     display: flex;
     flex-direction: column;
@@ -227,16 +224,15 @@ form .menu-btn {
     font-family: monospace;
 }
 
-/* FIX: Join Group Layout */
 .join-group {
     display: flex;
     gap: 10px;
-    width: 280px; /* Matching the width of main buttons */
+    width: 280px;
     height: 55px;
 }
 
 #input-room-code {
-    flex: 2; /* Takes up more space */
+    flex: 2;
     padding: 10px;
     border: 3px solid #4A2C2A;
     border-radius: 12px;
@@ -246,22 +242,19 @@ form .menu-btn {
     text-transform: uppercase;
 }
 
-/* FIX: Small menu button override for Join */
 .join-group .menu-btn.small {
     flex: 1;
-    width: auto; /* Overrides the 280px */
+    width: auto;
     padding: 0 15px;
     font-size: 0.9rem;
     border-radius: 12px;
     box-shadow: 0 4px 0px #4A2C2A;
 }
 
-/* --- Utility & Form Overrides --- */
 .hidden {
     display: none !important;
 }
 
-/* Prevents buttons inside forms from inheriting the 280px main-menu width */
 #auth-modal .menu-btn {
     width: 100% !important;
     padding: 12px !important;
@@ -282,11 +275,103 @@ form .menu-btn {
     text-decoration: none;
 }
 
-/* Back button specific styling */
 #btn-back-menu {
     background: #4A2C2A;
     color: white;
     text-decoration: none;
     padding: 5px 15px;
     border-radius: 5px;
+}
+
+/* =============================================
+   MOBILE RESPONSIVE — home.css
+   max-width: 480px (portrait phones)
+   ============================================= */
+@media (max-width: 480px) {
+
+    #home-screen {
+        padding: 20px 16px;
+        height: 100dvh; /* use dynamic viewport height on mobile */
+        overflow-y: auto;
+    }
+
+    /* Header: shrink login button, reduce padding */
+    .home-header {
+        padding: 0 8px;
+        justify-content: flex-end;
+    }
+
+    #btn-show-login {
+        padding: 8px 14px;
+        font-size: 0.78rem;
+    }
+
+    /* Logo: scale down dramatically so it fits on one or two lines */
+    .game-logo {
+        font-size: 38px;
+        letter-spacing: 1px;
+        text-align: center;
+        word-break: break-word;
+        transform: rotate(-1deg);
+    }
+
+    /* Tighten vertical gap between logo and buttons */
+    .home-content {
+        gap: 28px;
+    }
+
+    /* Menu buttons: narrower, smaller text, less padding */
+    .menu-btn {
+        width: 240px;
+        padding: 14px 10px;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 0px #4A2C2A;
+    }
+
+    .menu-options {
+        gap: 14px;
+    }
+
+    /* Room card shrinks to fit */
+    .room-card {
+        width: 240px;
+        padding: 14px;
+    }
+
+    .room-card h2 {
+        font-size: 2rem;
+        letter-spacing: 4px;
+    }
+
+    /* Join row */
+    .join-group {
+        width: 240px;
+        height: 48px;
+    }
+
+    #input-room-code {
+        font-size: 0.95rem;
+        padding: 8px;
+    }
+
+    /* Modal: fit inside smaller screens */
+    .modal-content {
+        padding: 24px 20px;
+        border-radius: 18px;
+    }
+
+    .auth-form-container h2 {
+        font-size: 1.2rem;
+    }
+
+    .input-group input,
+    .input-group select {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .btn-submit {
+        padding: 12px;
+        font-size: 0.95rem;
+    }
 }

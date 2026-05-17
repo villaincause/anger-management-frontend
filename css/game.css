@@ -64,7 +64,7 @@
     box-shadow: 0 4px 0 #5a0000;
 }
 
-/* --- 2. Scoreboard (Top Center) --- */
+/* --- 2. Scoreboard --- */
 .scoreboard {
     display: flex;
     justify-content: center;
@@ -105,12 +105,10 @@
     transition: all 0.3s ease;
 }
 
-/* MIRROR PLAYER 2 */
 .fighter-side.right {
     transform: scaleX(-1);
 }
 
-/* UN-MIRROR P2 CONTENT */
 .fighter-side.right .stats-container,
 .fighter-side.right .state-label {
     transform: scaleX(-1);
@@ -291,4 +289,145 @@
     20%, 80% { transform: translate3d(4px, 0, 0); }
     30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
     40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
+
+/* =============================================
+   MOBILE RESPONSIVE — game.css
+   max-width: 480px (portrait phones)
+   ============================================= */
+@media (max-width: 480px) {
+
+    /* Scoreboard: smaller score numbers */
+    .scoreboard {
+        gap: 12px;
+        padding: 10px 8px;
+        font-size: 1.5rem;
+    }
+
+    .score-box {
+        padding: 6px 14px;
+        min-width: 40px;
+        border-radius: 8px;
+    }
+
+    /* User stats badge: smaller & tighter */
+    .user-stats {
+        padding: 7px 12px;
+        border-radius: 8px;
+        border-width: 2px;
+        box-shadow: 0 2px 0 #4A2C2A;
+        top: 6px;
+        right: 8px;
+    }
+
+    #display-username {
+        font-size: 0.8rem;
+    }
+
+    #display-record {
+        font-size: 0.65rem;
+        margin-bottom: 5px;
+    }
+
+    .text-link {
+        padding: 3px 10px;
+        font-size: 0.6rem;
+    }
+
+    /* Arena: centered alignment */
+    .arena-container {
+        height: auto;
+        margin-top: 100px;
+        padding: 0 2%;
+        align-items: center;
+    }
+
+    /* Stats panels: much narrower, with breathing room below */
+    .stats-container {
+        width: 140px;
+        padding: 8px 10px;
+        gap: 6px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+
+    .state-label {
+        font-size: 0.72rem;
+        margin-bottom: 2px;
+    }
+
+    .bar-label {
+        font-size: 0.58rem;
+    }
+
+    .progress-container {
+        height: 7px;
+    }
+
+    /* Fighter: stack stats above hand, centered */
+    .fighter-side {
+        gap: 4px;
+        width: 48%;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Hands: push down away from stats */
+    .hand-wrapper {
+        margin-top: 20px;
+    }
+
+    .hand-wrapper img {
+        width: 150px;
+    }
+
+    /* Stats: push down away from state label */
+    .stats-container {
+        margin-bottom: 0;
+    }
+
+    /* Announcer: smaller text, fits on mobile */
+    .announcer {
+        font-size: 1rem;
+        min-height: 1.2rem;
+        padding: 0 10px;
+        margin-bottom: 2px;
+        text-shadow: 1px 1px 0px #FFF, 2px 2px 0px rgba(0,0,0,0.1);
+    }
+
+    /* Controls: push up closer to hands */
+    .controls-center {
+        bottom: 2%;
+        gap: 6px;
+    }
+
+    .control-group {
+        gap: 12px;
+        padding: 10px 16px;
+        border-radius: 50px;
+    }
+
+    .move-btn, .action-btn {
+        width: 64px;
+        height: 64px;
+        border-width: 3px;
+        box-shadow: 0 4px 0 #4A2C2A;
+    }
+
+    .move-btn img, .action-btn img {
+        width: 55%;
+        height: 55%;
+    }
+
+    .move-btn:hover, .action-btn:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 10px 0 #4A2C2A;
+    }
+
+    .secondary-btn {
+        padding: 8px 18px;
+        font-size: 0.85rem;
+        margin-top: 6px;
+    }
 }
